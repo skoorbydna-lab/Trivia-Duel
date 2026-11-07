@@ -45,7 +45,7 @@ h2{margin:0 0 10px;font-size:22px}
 .av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:700;color:#1a0f3a;flex:0 0 auto;font-size:15px}
 .pl.done{outline:2px solid var(--good)}
 .tick{color:var(--good);font-weight:700}
-.settings{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px}
+.settings{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
 .settings label{margin:0;font-size:13px}
 .settings select{font-size:16px;padding:10px}
 .timer{height:10px;background:rgba(0,0,0,.3);border-radius:99px;overflow:hidden;margin:6px 0 14px}
@@ -265,9 +265,130 @@ const RAW = {
 ["Who painted The Hay Wain?","John Constable","J.M.W. Turner","Thomas Gainsborough","L.S. Lowry"],
 ["Which artist is known for 'matchstick' figures in northern industrial scenes?","L.S. Lowry","John Constable","J.M.W. Turner","David Hockney"]
 ]};
+const RAW_HARD = {
+"General Knowledge":[
+["Which London station is the terminus for Eurostar trains?","St Pancras International","King's Cross","Waterloo","Victoria"],
+["In which year did the UK switch to decimal currency?","1971","1966","1969","1973"],
+["What is the highest-value Bank of England note in general circulation?","£50","£100","£20","£500"],
+["How many people sit on a jury in England and Wales?","12","10","15","9"],
+["What is the Chancellor of the Exchequer's official London residence?","11 Downing Street","12 Downing Street","Lambeth Palace","Clarence House"],
+["Which city does the postcode area 'EH' cover?","Edinburgh","Exeter","Ely","East Ham"],
+["What is the national animal of Scotland?","Unicorn","Red deer","Lion","Golden eagle"],
+["How many 'pips' are in the BBC Greenwich Time Signal?","6","5","3","7"],
+["What is the oldest university in the UK?","Oxford","Cambridge","St Andrews","Edinburgh"],
+["What is the Cornish name for Cornwall?","Kernow","Cymru","Alba","Mannin"]
+],
+"Science & Nature":[
+["What is the most abundant gas in Earth's atmosphere?","Nitrogen","Oxygen","Argon","Carbon dioxide"],
+["What is the chemical symbol for potassium?","K","P","Po","Pt"],
+["Which planet has the shortest day?","Jupiter","Saturn","Mercury","Neptune"],
+["What is the SI unit of electrical resistance?","Ohm","Volt","Ampere","Watt"],
+["Who discovered electromagnetic induction in 1831?","Michael Faraday","James Clerk Maxwell","Humphry Davy","Thomas Young"],
+["Which Scottish physicist's equations unified electricity and magnetism?","James Clerk Maxwell","Lord Kelvin","Michael Faraday","Peter Higgs"],
+["Roughly how fast does sound travel in air?","340 m/s","34 m/s","3,400 m/s","1,200 m/s"],
+["Which blood type is the universal red-cell donor?","O negative","AB positive","A negative","B positive"],
+["Dolly the sheep was cloned at an institute near which city?","Edinburgh","Cambridge","Oxford","Aberdeen"],
+["How many chromosomes are in a typical human body cell?","46","23","44","48"],
+["Which particle has no electric charge?","Neutron","Proton","Electron","Positron"],
+["What is the most common element in the universe?","Hydrogen","Helium","Oxygen","Carbon"]
+],
+"Geography":[
+["What is the most northerly point of mainland Britain?","Dunnet Head","John o' Groats","Cape Wrath","Duncansby Head"],
+["What is the most southerly point of mainland Britain?","Lizard Point","Land's End","Start Point","Portland Bill"],
+["Which river does the Clifton Suspension Bridge cross?","Avon","Severn","Wye","Exe"],
+["Which is the deepest freshwater loch in the UK?","Loch Morar","Loch Ness","Loch Lomond","Loch Awe"],
+["Lewis and Harris are part of which island group?","Outer Hebrides","Inner Hebrides","Orkney","Shetland"],
+["The Menai Strait separates mainland Wales from which island?","Anglesey","Isle of Man","Bardsey","Skomer"],
+["What is the county town of Devon?","Exeter","Plymouth","Barnstaple","Torquay"],
+["Which river flows through York?","Ouse","Aire","Don","Wharfe"],
+["What is the largest national park in the UK?","Cairngorms","Lake District","Snowdonia","Loch Lomond and the Trossachs"],
+["What is the longest river entirely in England?","Thames","Trent","Severn","Great Ouse"],
+["What is the capital of New Zealand?","Wellington","Auckland","Christchurch","Dunedin"],
+["What is the capital of Iceland?","Reykjavík","Oslo","Helsinki","Tórshavn"]
+],
+"History":[
+["Which king was killed at the Battle of Bosworth in 1485?","Richard III","Henry VI","Edward IV","Richard II"],
+["Which royal house did Henry VII found?","Tudor","Stuart","York","Plantagenet"],
+["Who was the last monarch of the House of Stuart?","Anne","Mary II","James II","Charles II"],
+["Who is the only British Prime Minister to have been assassinated?","Spencer Perceval","William Pitt the Younger","Lord Liverpool","Robert Peel"],
+["In which year did the Acts of Union join England and Scotland?","1707","1603","1801","1688"],
+["Henry V won which famous battle in 1415?","Agincourt","Crécy","Poitiers","Bosworth"],
+["Who became Lord Protector in 1653?","Oliver Cromwell","Richard Cromwell","Thomas Cromwell","Thomas Fairfax"],
+["Which Anglo-Saxon king is said to have burnt the cakes?","Alfred the Great","Æthelred the Unready","Edward the Confessor","Harold II"],
+["Which king ordered the Domesday Book?","William the Conqueror","Henry I","William II","Stephen"],
+["In which year did the UK join the EEC?","1973","1975","1967","1979"],
+["Who founded the Women's Social and Political Union in 1903?","Emmeline Pankhurst","Millicent Fawcett","Emily Davison","Ada Lovelace"],
+["Who is generally regarded as Britain's first Prime Minister?","Robert Walpole","William Pitt the Elder","Lord North","Benjamin Disraeli"],
+["Which ship carried the Pilgrims from Plymouth to America in 1620?","Mayflower","Golden Hind","Endeavour","Bounty"]
+],
+"Sport":[
+["Which football club is nicknamed 'the Toffees'?","Everton","Tottenham Hotspur","Sheffield Wednesday","Burnley"],
+["Which football club is nicknamed 'the Canaries'?","Norwich City","Watford","Crystal Palace","Brighton"],
+["In which city is the Crucible, home of the World Snooker Championship?","Sheffield","Nottingham","Leeds","Birmingham"],
+["How many fences are jumped in the Grand National?","30","16","32","40"],
+["Which ground is known as 'the home of cricket'?","Lord's","The Oval","Headingley","Edgbaston"],
+["What is the name of England's national rugby union stadium?","Twickenham","Wembley","Murrayfield","Cardiff Arms Park"],
+["Murrayfield is the national rugby stadium of which country?","Scotland","Wales","Ireland","England"],
+["Which team did England's Lionesses beat in the Euro 2022 final?","Germany","Spain","Sweden","France"],
+["How many Olympic gold medals did Sir Chris Hoy win?","6","4","5","7"],
+["Which British athlete won heptathlon gold at London 2012?","Jessica Ennis","Katarina Johnson-Thompson","Denise Lewis","Kelly Holmes"],
+["In cricket, what does LBW stand for?","Leg before wicket","Long ball wide","Left behind wicket","Low bowled wide"],
+["How many players are in a rugby union team on the pitch?","15","13","11","12"]
+],
+"Maths & Numbers":[
+["What is 17 × 23?","391","381","401","371"],
+["What do the interior angles of a hexagon add up to?","720°","540°","900°","360°"],
+["What is 3 to the power of 5?","243","125","81","729"],
+["How many prime numbers are less than 30?","10","9","11","8"],
+["What is the next square number after 196?","225","200","216","256"],
+["What is √2 to 3 decimal places?","1.414","1.412","1.441","1.732"],
+["How many faces does a dodecahedron have?","12","20","8","10"],
+["What is the highest common factor of 84 and 126?","42","21","14","28"],
+["What is the lowest common multiple of 12 and 18?","36","72","6","54"],
+["How many diagonals does a hexagon have?","9","6","12","8"],
+["What is 1 + 2 + 3 + … + 100?","5050","5000","10100","4950"],
+["What is 2⁻³?","1/8","−8","−6","1/6"],
+["What is the exterior angle of a regular octagon?","45°","135°","40°","60°"],
+["What is 0.3 recurring as a fraction?","1/3","3/10","1/30","33/100"],
+["How many seconds are in a day?","86,400","36,000","64,800","84,600"],
+["What is 0.125 as a fraction?","1/8","1/6","1/4","3/8"]
+],
+"Words & Language":[
+["In Yorkshire, what is a 'snicket'?","A narrow alleyway","A small snack","A shy person","A garden shed"],
+["In Cockney rhyming slang, what is a 'dog and bone'?","Phone","Home","Alone","Stone"],
+["In Cockney rhyming slang, what is your 'loaf of bread'?","Head","Bed","Shed","Dead"],
+["What does 'Aber' mean at the start of a Welsh place name?","River mouth","Hill","Castle","Forest"],
+["What does the Scots word 'dreich' describe?","Dull, wet weather","A narrow valley","A tired person","A strong drink"],
+["Which word means 'sociable, fond of company'?","Gregarious","Taciturn","Reticent","Aloof"],
+["What is a pangram?","A sentence using every letter","A word spelt the same backwards","A word made from initials","A sentence with no verbs"],
+["'Defenestration' means throwing someone out of a…","Window","Castle","Country","Boat"],
+["What is a group of owls called?","A parliament","A murder","A murmuration","A charm"],
+["A 'murmuration' is a flock of which bird?","Starlings","Crows","Geese","Finches"],
+["Which spelling is correct?","Accommodate","Accomodate","Acommodate","Acomodate"],
+["'The wind whispered' is an example of…","Personification","Simile","Onomatopoeia","Alliteration"]
+],
+"Books, TV & Music":[
+["Which Brontë sister wrote Wuthering Heights?","Emily","Charlotte","Anne","Branwell"],
+["Who wrote Frankenstein?","Mary Shelley","Percy Shelley","Bram Stoker","Lord Byron"],
+["In which fictional county are Thomas Hardy's novels set?","Wessex","Mercia","Barsetshire","Loamshire"],
+["Who wrote Nineteen Eighty-Four?","George Orwell","Aldous Huxley","H.G. Wells","Ray Bradbury"],
+["Which Shakespeare play is set at Elsinore?","Hamlet","Macbeth","King Lear","Othello"],
+["Which play is known as 'the Scottish Play'?","Macbeth","Hamlet","King Lear","The Tempest"],
+["Which band was fronted by Jarvis Cocker?","Pulp","Blur","Suede","Elbow"],
+["Who composed the 'Pomp and Circumstance' marches?","Edward Elgar","Ralph Vaughan Williams","Gustav Holst","Benjamin Britten"],
+["Who composed The Planets suite?","Gustav Holst","Edward Elgar","Benjamin Britten","Henry Purcell"],
+["Which sitcom is set in Walmington-on-Sea?","Dad's Army","Only Fools and Horses","Fawlty Towers","Blackadder"],
+["In which town is Fawlty Towers set?","Torquay","Brighton","Blackpool","Bournemouth"],
+["Who created the Angel of the North?","Antony Gormley","Damien Hirst","Henry Moore","Anish Kapoor"],
+["Who wrote The Wind in the Willows?","Kenneth Grahame","A.A. Milne","Lewis Carroll","J.M. Barrie"],
+["Who wrote The Rime of the Ancient Mariner?","Samuel Taylor Coleridge","William Wordsworth","John Keats","Lord Byron"],
+["What nationality is Agatha Christie's detective Hercule Poirot?","Belgian","French","Swiss","Dutch"]
+]};
 const CATS = Object.keys(RAW);
 const Q = [];
-for (const c of CATS) for (const r of RAW[c]) Q.push({c, q:r[0], o:r.slice(1)});
+for (const c of CATS) for (const r of RAW[c]) Q.push({c, lv:'s', q:r[0], o:r.slice(1)});
+for (const c of CATS) for (const r of (RAW_HARD[c]||[])) Q.push({c, lv:'h', q:r[0], o:r.slice(1)});
+const LEVELS = {h:'Hard', s:'Standard', m:'Mixed'};
 
 const COLORS = ['#ff5d8f','#4cc9f0','#ffd23f','#7bd389','#b388ff','#ff9f43','#00d1b2','#ff8fab','#a0e7e5','#f4a261'];
 const REVEAL = 4500, COUNTDOWN = 3000;
@@ -398,7 +519,7 @@ function render(d){
       <p class="mut">${waited ? 'Nobody is hosting code <b>' + esc(S.code) + '</b> right now. Check the code, or ask the host to create the game first.' : 'Looking for the host…'}</p></div>`;
   }
   if (g.ph === 'l') return head + renderLobby(g, pl, amHost);
-  if (g.ph === 'c') return head + `<div class="card center"><h2>Get ready!</h2><p class="mut">${g.q.length} questions · ${esc(g.cat)} · ${g.d}s each</p>
+  if (g.ph === 'c') return head + `<div class="card center"><h2>Get ready!</h2><p class="mut">${g.q.length} questions · ${esc(LEVELS[g.lv]||'Mixed')} · ${esc(g.cat)} · ${g.d}s each</p>
       <div class="count" id="tnum">3</div><p class="mut">Faster correct answers score more points.</p></div>`;
   if (g.ph === 'q' || g.ph === 'r') return head + renderQuestion(g, pl);
   if (g.ph === 'o') return head + renderOver(g, pl, amHost);
@@ -428,6 +549,7 @@ function renderLobby(g, pl, amHost){
     <h2 style="margin-top:18px">Players (${pl.length})</h2>
     <div class="players">${pl.map(p=>`<span class="pl">${avatar(p)}${esc(p.presence.name)}${p.presence.host?' 👑':''}${isMeP(p)?'<span class="you">you</span>':''}</span>`).join('')}</div>
     <div class="settings">
+      <label>Difficulty${sel('lv', [['h','Hard'],['s','Standard'],['m','Mixed']], g.lv || 'm')}</label>
       <label>Category${sel('cat', [['Mixed','Mixed'], ...CATS.map(c=>[c,c])], g.cat)}</label>
       <label>Questions${sel('n', [[5,'5'],[10,'10'],[15,'15'],[20,'20']], g.n)}</label>
       <label>Time each${sel('d', [[10,'10 s'],[15,'15 s'],[20,'20 s'],[30,'30 s']], g.d)}</label>
@@ -473,7 +595,7 @@ function renderOver(g, pl, amHost){
   let headline = 'Game over!';
   if (top) headline = st.length === 1 ? `You scored ${top.s}!` : tie ? "It's a tie! 🤝" : `🏆 ${esc(top.p.presence.name)} wins!`;
   return `<div class="card"><div class="win">${headline}</div>
-    <p class="center mut" style="margin:0">${g.q.length} questions · ${esc(g.cat)}</p>
+    <p class="center mut" style="margin:0">${g.q.length} questions · ${esc(LEVELS[g.lv]||'Mixed')} · ${esc(g.cat)}</p>
     ${board(g, pl, false)}
     <div class="btns">${amHost ? `<button class="big primary" data-act="again">Play again</button>` : `<p class="status mut">Waiting for the host to start another round…</p>`}
     <button class="big ghost" data-act="leave">Leave game</button></div></div>`;
@@ -553,7 +675,7 @@ function needName(){
 }
 function baseMe(name, host){
   const p = {name, col: COLORS[Math.floor(Math.random()*COLORS.length)]};
-  if (host){ p.host = true; p.hs = Date.now(); p.g = {e:0, ph:'l', qi:0, q:[], d:15, n:10, cat:'Mixed'}; }
+  if (host){ p.host = true; p.hs = Date.now(); p.g = {e:0, ph:'l', qi:0, q:[], d:15, n:10, cat:'Mixed', lv:'h'}; }
   return p;
 }
 function rid(){ const a = new Uint8Array(8); crypto.getRandomValues(a); return Array.from(a, b => b.toString(16).padStart(2,'0')).join(''); }
@@ -641,6 +763,7 @@ const actions = {
   start(){
     const g = myP.g; if (!g) return;
     let pool = Q.map((q,i)=>i); if (g.cat !== 'Mixed') pool = pool.filter(i => Q[i].c === g.cat);
+    const lv = g.lv || 'm'; if (lv !== 'm') pool = pool.filter(i => Q[i].lv === lv);
     const ids = shuffle(pool).slice(0, Math.min(g.n, pool.length));
     const e = Date.now();
     setP({g:{...g, e, ph:'c', qi:0, q:ids}, ans:{e, a:{}}});
@@ -670,7 +793,7 @@ app.addEventListener('keydown', e => {
 });
 app.addEventListener('change', e => {
   const k = e.target.dataset && e.target.dataset.set; if (!k || !myP.g) return;
-  const v = k === 'cat' ? e.target.value : parseInt(e.target.value, 10);
+  const v = (k === 'cat' || k === 'lv') ? e.target.value : parseInt(e.target.value, 10);
   setG({[k]: v});
 });
 
