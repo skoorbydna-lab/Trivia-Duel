@@ -2,7 +2,7 @@
 
 A quick-fire multiple-choice trivia game. Same questions, same clock — the fastest right answer scores the most points.
 
-- 265 questions with a British flavour (Hard and Standard sets) across General Knowledge, Science & Nature, Geography, History, Sport, Maths & Numbers, Words & Language, and Books, TV & Music
+- 479 questions with a British flavour (316 Hard, 163 Standard) across General Knowledge, Science & Nature, Geography, History, Sport, Maths & Numbers, Words & Language, and Books, TV & Music
 - Choose a difficulty (Hard, Standard or Mixed), a category, 5–20 questions and 10–30 seconds per question
 - 500 points for a correct answer plus up to 500 more for speed
 - Solo practice mode
