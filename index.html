@@ -364,7 +364,7 @@ const RAW_HARD = {
 ["'Defenestration' means throwing someone out of a…","Window","Castle","Country","Boat"],
 ["What is a group of owls called?","A parliament","A murder","A murmuration","A charm"],
 ["A 'murmuration' is a flock of which bird?","Starlings","Crows","Geese","Finches"],
-["Which spelling is correct?","Accommodate","Accomodate","Acommodate","Acomodate"],
+["Which of these words is spelt correctly?","Accommodate","Accomodate","Acommodate","Acomodate"],
 ["'The wind whispered' is an example of…","Personification","Simile","Onomatopoeia","Alliteration"]
 ],
 "Books, TV & Music":[
@@ -764,7 +764,17 @@ const actions = {
     const g = myP.g; if (!g) return;
     let pool = Q.map((q,i)=>i); if (g.cat !== 'Mixed') pool = pool.filter(i => Q[i].c === g.cat);
     const lv = g.lv || 'm'; if (lv !== 'm') pool = pool.filter(i => Q[i].lv === lv);
-    const ids = shuffle(pool).slice(0, Math.min(g.n, pool.length));
+    // Avoid repeats: this device remembers which questions it has already used.
+    const n = Math.min(g.n, pool.length), UKEY = 'td_used_' + Q.length;
+    let used = []; try{ used = JSON.parse(localStorage.getItem(UKEY) || '[]'); }catch(e){}
+    const usedSet = new Set(used), fresh = pool.filter(i => !usedSet.has(i));
+    let ids;
+    if (fresh.length >= n) ids = shuffle(fresh).slice(0, n);
+    else {
+      ids = shuffle(fresh).concat(shuffle(pool.filter(i => usedSet.has(i))).slice(0, n - fresh.length));
+      const inPool = new Set(pool); used = used.filter(i => !inPool.has(i)); // this set is used up: start a new cycle
+    }
+    used = used.concat(ids); save(UKEY, JSON.stringify(used));
     const e = Date.now();
     setP({g:{...g, e, ph:'c', qi:0, q:ids}, ans:{e, a:{}}});
   },
