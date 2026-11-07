@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trivia Duel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg1:#1a0f3a;--bg2:#3b1c7a;--card:rgba(255,255,255,.08);--line:rgba(255,255,255,.14);--ink:#fff;--mut:rgba(255,255,255,.65);
+--a:#ff5d8f;--b:#4cc9f0;--c:#ffd23f;--d:#7bd389;--good:#3ddc84;--bad:#ff4d6d;--acc:#ffd23f}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{font-family:Fredoka,system-ui,sans-serif;color:var(--ink);background:radial-gradient(1200px 700px at 20% -10%,#5a2bb0 0,transparent 60%),linear-gradient(160deg,var(--bg1),var(--bg2));min-height:100vh;-webkit-tap-highlight-color:transparent}
+#app{max-width:600px;margin:0 auto;padding:18px 16px 40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:22px;backdrop-filter:blur(6px)}
+.logo{font-size:44px;font-weight:700;letter-spacing:.5px;text-align:center;line-height:1.05;margin:10px 0 4px}
+.logo span{color:var(--acc)}
+.sub{text-align:center;color:var(--mut);margin:0 0 22px}
+label{display:block;font-size:14px;color:var(--mut);margin-bottom:14px}
+input,select{font:inherit;font-size:18px;width:100%;padding:12px 14px;border-radius:14px;border:2px solid var(--line);background:rgba(0,0,0,.25);color:#fff;outline:none;margin-top:6px}
+input:focus,select:focus{border-color:var(--acc)}
+select option{color:#000}
+button{font:inherit;cursor:pointer;border:0;border-radius:16px;padding:14px 18px;font-size:18px;font-weight:600;color:#1a0f3a;background:#fff;transition:transform .08s,filter .15s}
+button:active{transform:scale(.97)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.big{width:100%;font-size:20px;padding:16px}
+.primary{background:var(--acc)}
+.ghost{background:transparent;color:#fff;border:2px solid var(--line)}
+.row{display:flex;gap:10px;align-items:stretch;margin:12px 0}
+.row input{margin:0;text-transform:uppercase;letter-spacing:6px;text-align:center;font-weight:600}
+.row button{flex:0 0 auto}
+.or{text-align:center;color:var(--mut);font-size:14px;margin:14px 0 4px}
+.note{font-size:14px;color:var(--mut);background:rgba(0,0,0,.2);border-radius:12px;padding:10px 12px;margin-top:14px;line-height:1.4}
+.err{color:#ffb3c1;margin-top:12px;text-align:center}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px}
+.chip{display:inline-block;background:rgba(255,255,255,.12);border-radius:999px;padding:5px 12px;font-size:14px;font-weight:500}
+.leave{background:transparent;color:var(--mut);padding:6px 10px;font-size:14px;border:1px solid var(--line)}
+.code{font-size:56px;font-weight:700;letter-spacing:12px;text-align:center;color:var(--acc);margin:4px 0 0}
+.center{text-align:center}
+.mut{color:var(--mut)}
+h2{margin:0 0 10px;font-size:22px}
+.players{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 18px}
+.pl{display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.22);border-radius:999px;padding:5px 12px 5px 5px;font-weight:500}
+.av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:700;color:#1a0f3a;flex:0 0 auto;font-size:15px}
+.pl.done{outline:2px solid var(--good)}
+.tick{color:var(--good);font-weight:700}
+.settings{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px}
+.settings label{margin:0;font-size:13px}
+.settings select{font-size:16px;padding:10px}
+.timer{height:10px;background:rgba(0,0,0,.3);border-radius:99px;overflow:hidden;margin:6px 0 14px}
+.timer i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--acc),var(--a));border-radius:99px;transition:width .15s linear}
+.tnum{font-size:22px;font-weight:700;min-width:36px;text-align:right}
+.qtext{font-size:26px;font-weight:600;line-height:1.25;margin:6px 0 20px;min-height:66px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.opt{min-height:88px;font-size:19px;line-height:1.2;color:#1a0f3a;padding:12px;border-radius:18px;box-shadow:0 5px 0 rgba(0,0,0,.25);word-break:break-word}
+.opt:nth-child(1){background:var(--a)}.opt:nth-child(2){background:var(--b)}.opt:nth-child(3){background:var(--c)}.opt:nth-child(4){background:var(--d)}
+.opts.locked .opt{opacity:.35;cursor:default}
+.opts.locked .opt.mine{opacity:1;outline:4px solid #fff}
+.opts.timeup .opt:not(.mine){opacity:.35;cursor:default}
+.opts.reveal .opt{opacity:.3;cursor:default}
+.opts.reveal .opt.right{opacity:1;outline:4px solid var(--good)}
+.opts.reveal .opt.mine.wrong{opacity:.9;outline:4px solid var(--bad)}
+.status{text-align:center;margin:16px 0 4px;font-size:18px;min-height:26px}
+.result{font-size:30px;font-weight:700;text-align:center;margin:14px 0 4px}
+.result.good{color:var(--good)}.result.bad{color:#ffb3c1}
+.board{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.br{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.22);border-radius:14px;padding:8px 12px}
+.br.me{outline:2px solid var(--acc)}
+.br .rk{width:28px;text-align:center;font-weight:700;color:var(--mut)}
+.br .nm{flex:1;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.br .dl{font-size:14px;width:56px;text-align:right}
+.br .sc{font-weight:700;width:64px;text-align:right}
+.dl.g{color:var(--good)}.dl.b{color:#ffb3c1}
+.count{font-size:110px;font-weight:700;text-align:center;color:var(--acc);line-height:1;margin:20px 0}
+.win{font-size:34px;font-weight:700;text-align:center;margin:6px 0}
+.btns{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+.you{font-size:12px;color:var(--acc);margin-left:4px}
+@media (max-width:420px){.qtext{font-size:22px}.opt{font-size:17px;min-height:78px}.logo{font-size:38px}.code{font-size:46px}.settings{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ---------- Question bank: [question, correct, wrong, wrong, wrong] ----------
+const RAW = {
+"General Knowledge":[
+["How many days are there in a leap year?","366","365","364","360"],
+["Mixing blue and yellow paint makes which colour?","Green","Purple","Orange","Brown"],
+["How many hours are there in a week?","168","144","160","172"],
+["Which instrument has 88 keys on a standard model?","Piano","Harp","Accordion","Xylophone"],
+["What is the main ingredient of guacamole?","Avocado","Pea","Cucumber","Lime"],
+["How many pieces does each player start with in chess?","16","12","18","20"],
+["What colour are the stars on the European Union flag?","Yellow","White","Blue","Red"],
+["Which month has the fewest days?","February","April","June","November"],
+["What is the hardest natural substance?","Diamond","Granite","Quartz","Iron"],
+["Which fictional detective lived at 221B Baker Street?","Sherlock Holmes","Hercule Poirot","Miss Marple","Inspector Morse"],
+["How many strings does a standard violin have?","4","5","6","3"],
+["Which toy building bricks were first made in Denmark?","LEGO","Meccano","K'Nex","Stickle Bricks"],
+["Which bird is a traditional symbol of peace?","Dove","Eagle","Owl","Robin"],
+["How many minutes are there in a full day?","1440","1240","1600","1140"],
+["What sweet substance do bees make from nectar?","Honey","Syrup","Jam","Treacle"],
+["What is the main emergency phone number in the UK?","999","911","111","101"],
+["What is a baby kangaroo called?","Joey","Kit","Cub","Calf"],
+["What shape is a UK stop sign?","Octagon","Hexagon","Circle","Triangle"]
+],
+"Science & Nature":[
+["What is the chemical symbol for gold?","Au","Ag","Gd","Go"],
+["What is the largest planet in our solar system?","Jupiter","Saturn","Neptune","Uranus"],
+["Which planet is known as the Red Planet?","Mars","Venus","Jupiter","Mercury"],
+["Which gas do plants take in from the air for photosynthesis?","Carbon dioxide","Oxygen","Nitrogen","Helium"],
+["How many bones are in an adult human body?","206","186","226","306"],
+["At what temperature (°C) does water boil at sea level?","100","90","110","212"],
+["What is the closest star to Earth?","The Sun","Proxima Centauri","Sirius","Polaris"],
+["What is the largest organ of the human body?","Skin","Liver","Brain","Lungs"],
+["What is the chemical formula for water?","H₂O","CO₂","O₂","H₂O₂"],
+["What is the fastest land animal?","Cheetah","Lion","Pronghorn","Greyhound"],
+["How many legs does a spider have?","8","6","10","12"],
+["In which part of an animal cell is most DNA found?","Nucleus","Ribosome","Cell membrane","Cytoplasm"],
+["Which planet is famous for its large, bright rings?","Saturn","Jupiter","Mars","Neptune"],
+["Roughly how fast does light travel?","300,000 km/s","30,000 km/s","3,000 km/s","3,000,000 km/s"],
+["Which element has atomic number 1?","Hydrogen","Helium","Oxygen","Carbon"],
+["What is the largest mammal?","Blue whale","African elephant","Sperm whale","Giraffe"],
+["Which force keeps the Moon in orbit around the Earth?","Gravity","Magnetism","Friction","Static electricity"],
+["Which blood cells fight infection?","White blood cells","Red blood cells","Platelets","Plasma cells"],
+["Fe is the chemical symbol for which element?","Iron","Lead","Tin","Zinc"]
+],
+"Geography":[
+["What is the capital of Australia?","Canberra","Sydney","Melbourne","Perth"],
+["What is the longest river in the UK?","Severn","Thames","Trent","Tyne"],
+["What is the largest ocean on Earth?","Pacific","Atlantic","Indian","Arctic"],
+["In which country is the Taj Mahal?","India","Pakistan","Bangladesh","Nepal"],
+["How many continents are there?","7","5","6","8"],
+["What is the capital of Canada?","Ottawa","Toronto","Vancouver","Montreal"],
+["What is the highest mountain above sea level?","Everest","K2","Kilimanjaro","Mont Blanc"],
+["What is the largest hot desert in the world?","Sahara","Gobi","Kalahari","Arabian"],
+["Which country has the largest land area?","Russia","Canada","China","USA"],
+["What is the capital of Spain?","Madrid","Barcelona","Seville","Valencia"],
+["Which country is shaped like a boot?","Italy","Greece","Portugal","Croatia"],
+["What is the capital of Japan?","Tokyo","Kyoto","Osaka","Hiroshima"],
+["What is the largest country in South America?","Brazil","Argentina","Peru","Colombia"],
+["What is the highest mountain in the UK?","Ben Nevis","Snowdon","Scafell Pike","Slieve Donard"],
+["Which city is nicknamed 'the Big Apple'?","New York","Chicago","Los Angeles","Boston"],
+["Which strait separates Spain from Morocco?","Strait of Gibraltar","Bosporus","Strait of Dover","Strait of Hormuz"],
+["What is the capital of Egypt?","Cairo","Alexandria","Luxor","Giza"],
+["Which is the largest US state by area?","Alaska","Texas","California","Montana"],
+["Which river flows through Paris?","Seine","Rhine","Loire","Rhône"]
+],
+"History":[
+["In which year was the Battle of Hastings?","1066","1067","1166","966"],
+["How many wives did Henry VIII have?","6","5","7","8"],
+["Who was the first person to walk on the Moon?","Neil Armstrong","Buzz Aldrin","Yuri Gagarin","Michael Collins"],
+["In which year did World War II end?","1945","1944","1946","1918"],
+["Who was the first Roman emperor?","Augustus","Julius Caesar","Nero","Caligula"],
+["Which famous ship sank on its first voyage in 1912?","Titanic","Lusitania","Mary Rose","Britannic"],
+["In which year did the Berlin Wall fall?","1989","1991","1987","1979"],
+["Who painted the Mona Lisa?","Leonardo da Vinci","Michelangelo","Raphael","Donatello"],
+["Which Ancient Wonder of the World is still standing?","Great Pyramid of Giza","Lighthouse of Alexandria","Colossus of Rhodes","Hanging Gardens of Babylon"],
+["In which year was Queen Elizabeth II crowned?","1953","1952","1947","1960"],
+["Who was the UK's first female Prime Minister?","Margaret Thatcher","Theresa May","Liz Truss","Barbara Castle"],
+["Which civilisation built Machu Picchu?","Inca","Aztec","Maya","Olmec"],
+["In which year was the Gunpowder Plot?","1605","1066","1588","1666"],
+["In which year was the Great Fire of London?","1666","1605","1688","1566"],
+["Who was the first President of the USA?","George Washington","Thomas Jefferson","Abraham Lincoln","John Adams"],
+["In which year did the Spanish Armada sail against England?","1588","1605","1492","1688"],
+["Which Roman town was buried by Vesuvius in AD 79?","Pompeii","Rome","Naples","Ostia"],
+["Who discovered penicillin in 1928?","Alexander Fleming","Louis Pasteur","Marie Curie","Edward Jenner"],
+["Which Roman wall was built across northern England?","Hadrian's Wall","Antonine Wall","Offa's Dyke","Severus's Wall"]
+],
+"Sport":[
+["How many players does a football team have on the pitch?","11","10","12","9"],
+["How often are the Summer Olympics normally held?","Every 4 years","Every 2 years","Every 3 years","Every 5 years"],
+["What is the maximum score with three darts?","180","160","150","200"],
+["Which sport is played at Wimbledon?","Tennis","Golf","Cricket","Rowing"],
+["How many points is a try worth in rugby union?","5","3","4","7"],
+["What is the standard maximum break in snooker?","147","155","140","180"],
+["How many players are on court for a netball team?","7","5","6","9"],
+["Roughly how long is a marathon?","26.2 miles","13.1 miles","24 miles","30 miles"],
+["The Tour de France is a race in which sport?","Cycling","Running","Sailing","Motor racing"],
+["How many holes are in a standard round of golf?","18","9","12","20"],
+["How many balls are in a standard over in cricket?","6","5","8","4"],
+["Which city hosted the 2012 Summer Olympics?","London","Beijing","Rio de Janeiro","Paris"],
+["What colour jersey does the Tour de France leader wear?","Yellow","Green","Polka dot","White"],
+["How many rings are on the Olympic flag?","5","4","6","7"],
+["How many players per team are on a basketball court?","5","6","7","4"],
+["Which sport uses a shuttlecock?","Badminton","Squash","Table tennis","Lacrosse"],
+["In tennis, what is a score of zero called?","Love","Nil","Duck","Zip"],
+["How long is an Olympic swimming pool?","50 m","25 m","100 m","60 m"],
+["How many points is the inner bullseye worth in darts?","50","25","60","100"]
+],
+"Maths & Numbers":[
+["How many sides does a hexagon have?","6","5","7","8"],
+["What is the square root of 144?","12","14","11","16"],
+["What is π to 2 decimal places?","3.14","3.41","3.12","3.16"],
+["What is the next prime number after 7?","11","9","13","10"],
+["What do the angles in a triangle add up to?","180°","360°","90°","270°"],
+["What is 7 × 8?","56","54","58","64"],
+["How many degrees are in a full turn?","360","180","400","720"],
+["What is 2 to the power of 10?","1024","1000","512","2048"],
+["What is 50 in Roman numerals?","L","C","D","V"],
+["What is the smallest prime number?","2","1","3","0"],
+["What is 15% of 200?","30","15","20","35"],
+["What do the interior angles of a quadrilateral add up to?","360°","180°","540°","720°"],
+["How many edges does a cube have?","12","8","6","10"],
+["What is 0.75 as a fraction in its simplest form?","3/4","7/5","3/5","2/3"],
+["What is an 8-sided polygon called?","Octagon","Hexagon","Heptagon","Nonagon"],
+["What is 12 squared?","144","124","122","132"],
+["How many faces does a triangular prism have?","5","6","4","9"],
+["What is the mean of 2, 4, 6 and 8?","5","4","6","20"],
+["In the sequence 1, 1, 2, 3, 5, 8, … what is the 10th term?","55","34","89","50"],
+["What year is MMXXVI in Roman numerals?","2026","2016","2024","1026"]
+],
+"Words & Language":[
+["What is the plural of 'mouse' (the animal)?","Mice","Mouses","Meese","Mousen"],
+["What is the opposite of 'ancient'?","Modern","Old","Antique","Historic"],
+["How many letters are in the English alphabet?","26","24","25","28"],
+["Which word means the same as 'happy'?","Joyful","Gloomy","Weary","Anxious"],
+["A word that sounds like another but has a different meaning is a…","Homophone","Synonym","Antonym","Acronym"],
+["'Bonjour' means hello in which language?","French","Spanish","Italian","Portuguese"],
+["'Gracias' means thank you in which language?","Spanish","Italian","French","Greek"],
+["What is the most common letter in written English?","E","A","T","S"],
+["A word made from initials, like NASA, is called an…","Acronym","Anagram","Palindrome","Idiom"],
+["Which of these words is a palindrome?","Level","Lever","Label","Novel"],
+["What type of word describes a noun?","Adjective","Adverb","Verb","Preposition"],
+["Which word is an anagram of 'listen'?","Silent","Lights","Glisten","Stolen"],
+["How many syllables are in the word 'banana'?","3","2","4","1"],
+["Which spelling is correct?","Necessary","Neccessary","Necesary","Neccesary"],
+["What is a group of crows called?","A murder","A pride","A gaggle","A school"],
+["What is a group of lions called?","A pride","A pack","A herd","A flock"],
+["'Danke' means thank you in which language?","German","Dutch","Swedish","Danish"],
+["What punctuation mark ends a question?","Question mark","Full stop","Comma","Colon"],
+["What is the word for a fear of spiders?","Arachnophobia","Claustrophobia","Agoraphobia","Acrophobia"]
+]};
+const CATS = Object.keys(RAW);
+const Q = [];
+for (const c of CATS) for (const r of RAW[c]) Q.push({c, q:r[0], o:r.slice(1)});
+
+const COLORS = ['#ff5d8f','#4cc9f0','#ffd23f','#7bd389','#b388ff','#ff9f43','#00d1b2','#ff8fab','#a0e7e5','#f4a261'];
+const REVEAL = 4500, COUNTDOWN = 3000;
+
+// ---------- State ----------
+const S = {screen:'home', name:load('td_name')||'', code:'', solo:false, err:'', joinAt:0, mp:'loading'};
+let lobby = null, room = null, myP = {}, myPeer = null;
+let lastKey = '', phaseStart = Date.now(), lastGame = null, noHostSince = 0, lastHtml = '';
+const orderCache = {};
+const app = document.getElementById('app');
+
+function load(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function save(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function shuffle(a){ a = a.slice(); for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+// ---------- Presence / room helpers ----------
+function setP(patch){
+  for (const k in patch){ if (patch[k] === null) delete myP[k]; else myP[k] = patch[k]; }
+  if (room) room.presence(patch).catch(()=>{});
+  update();
+}
+function setG(patch){ setP({g:{...myP.g, ...patch}}); }
+
+function peers(){
+  if (!room) return [{peer:'solo', isMe:true, sameTab:true, kind:'viewer', presence:myP}];
+  const ps = room.peers().filter(p => p.kind !== 'agent');
+  let out = [], foundMe = false;
+  for (const p of ps){
+    if (p.isMe && p.sameTab){ foundMe = true; myPeer = p.peer; out.push({...p, presence:myP}); }
+    else out.push(p);
+  }
+  if (!foundMe) out.push({peer: myPeer || '~me', isMe:true, sameTab:true, kind:'viewer', presence:myP});
+  return out;
+}
+const isMeP = p => p.isMe && p.sameTab;
+function players(ps){ return ps.filter(p => p.presence && typeof p.presence.name === 'string' && p.presence.name); }
+function hostOf(ps){
+  const hs = ps.filter(p => p.presence && p.presence.host && p.presence.g && typeof p.presence.g === 'object');
+  hs.sort((a,b) => (a.presence.hs||0) - (b.presence.hs||0) || (a.peer < b.peer ? -1 : 1));
+  return hs[0] || null;
+}
+function validGame(g){ return g && Array.isArray(g.q) && typeof g.ph === 'string' && g.q.every(i => Number.isInteger(i) && i>=0 && i<Q.length); }
+function derive(){
+  const ps = peers(), pl = players(ps), h = hostOf(ps);
+  const g = h && validGame(h.presence.g) ? h.presence.g : null;
+  return {ps, pl, h, g, amHost: !!(h && isMeP(h))};
+}
+function answerOf(p, g, qi){
+  const a = p.presence && p.presence.ans;
+  if (!a || a.e !== g.e || !a.a) return null;
+  const v = a.a[qi];
+  return Array.isArray(v) && v.length === 2 ? v : null;
+}
+function points(a, d){
+  if (!a || a[0] !== 0) return 0;
+  const t = Math.max(0, Number(a[1]) || 0);
+  return 500 + Math.round(500 * Math.max(0, 1 - t / (d*1000)));
+}
+function standings(g, pl){
+  const upto = g.ph === 'o' ? g.q.length : g.ph === 'r' ? g.qi + 1 : g.qi;
+  return pl.map(p => {
+    let s = 0, c = 0, last = 0;
+    for (let i=0;i<upto;i++){ const pt = points(answerOf(p,g,i), g.d); s += pt; if (pt) c++; if (i === g.qi) last = pt; }
+    return {p, s, c, last};
+  }).sort((a,b) => b.s - a.s);
+}
+function orderFor(g){
+  const k = g.e + ':' + g.qi;
+  return orderCache[k] || (orderCache[k] = shuffle([0,1,2,3]));
+}
+function colorOf(p){ const c = p.presence.col; return (typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c)) ? c : '#ccc'; }
+function avatar(p){ return `<span class="av" style="background:${colorOf(p)}">${esc((p.presence.name||'?').trim().charAt(0).toUpperCase())}</span>`; }
+
+// ---------- Rendering ----------
+function render(d){
+  if (S.screen === 'home') return renderHome();
+  const {g, pl, amHost} = d;
+  const head = `<div class="top"><span class="chip">${S.solo ? 'Solo practice' : 'Room ' + esc(S.code)}</span><button class="leave" data-act="leave">Leave</button></div>`;
+  if (!g){
+    const waited = Date.now() - S.joinAt > 4000;
+    return head + `<div class="card center"><h2>${waited ? 'No game found' : 'Joining room ' + esc(S.code) + '…'}</h2>
+      <p class="mut">${waited ? 'Nobody is hosting code <b>' + esc(S.code) + '</b> right now. Check the code, or ask the host to create the game first.' : 'Looking for the host…'}</p></div>`;
+  }
+  if (g.ph === 'l') return head + renderLobby(g, pl, amHost);
+  if (g.ph === 'c') return head + `<div class="card center"><h2>Get ready!</h2><p class="mut">${g.q.length} questions · ${esc(g.cat)} · ${g.d}s each</p>
+      <div class="count" id="tnum">3</div><p class="mut">Faster correct answers score more points.</p></div>`;
+  if (g.ph === 'q' || g.ph === 'r') return head + renderQuestion(g, pl);
+  if (g.ph === 'o') return head + renderOver(g, pl, amHost);
+  return head;
+}
+
+function renderHome(){
+  const ok = S.mp === 'ok';
+  return `<div class="logo">⚡ Trivia <span>Duel</span></div>
+  <p class="sub">Same questions, same clock. The fastest right answer wins.</p>
+  <div class="card">
+    <label>Your name<input id="nm" maxlength="16" autocomplete="off" placeholder="e.g. Sam" value="${esc(S.name)}"></label>
+    <button class="big primary" data-act="create" ${ok?'':'disabled'}>${S.mp==='loading'?'Connecting…':'Create a game'}</button>
+    <div class="or">or join a friend's game</div>
+    <div class="row"><input id="cd" maxlength="4" autocomplete="off" placeholder="CODE" value="${esc(S.code)}"><button data-act="join" ${ok?'':'disabled'}>Join</button></div>
+    <button class="big ghost" data-act="solo">Solo practice</button>
+    ${S.mp==='off' ? `<div class="note">Multiplayer isn't available in this view — players need to open this page while signed in to Claude. Solo practice still works.</div>` : ''}
+    ${S.err ? `<div class="err">${esc(S.err)}</div>` : ''}
+  </div>
+  <p class="sub" style="margin-top:16px;font-size:14px">${Q.length} questions across ${CATS.length} categories</p>`;
+}
+
+function renderLobby(g, pl, amHost){
+  const sel = (key, opts, val) => `<select data-set="${key}" ${amHost?'':'disabled'}>${opts.map(o=>`<option value="${esc(o[0])}" ${String(o[0])===String(val)?'selected':''}>${esc(o[1])}</option>`).join('')}</select>`;
+  return `<div class="card">
+    ${S.solo ? '<h2 class="center">Solo practice</h2>' : `<p class="center mut" style="margin:0">Game code</p><div class="code">${esc(S.code)}</div><p class="center mut" style="margin-top:2px">Friends open this page, tap Join and type the code.</p>`}
+    <h2 style="margin-top:18px">Players (${pl.length})</h2>
+    <div class="players">${pl.map(p=>`<span class="pl">${avatar(p)}${esc(p.presence.name)}${p.presence.host?' 👑':''}${isMeP(p)?'<span class="you">you</span>':''}</span>`).join('')}</div>
+    <div class="settings">
+      <label>Category${sel('cat', [['Mixed','Mixed'], ...CATS.map(c=>[c,c])], g.cat)}</label>
+      <label>Questions${sel('n', [[5,'5'],[10,'10'],[15,'15'],[20,'20']], g.n)}</label>
+      <label>Time each${sel('d', [[10,'10 s'],[15,'15 s'],[20,'20 s'],[30,'30 s']], g.d)}</label>
+    </div>
+    ${amHost ? `<button class="big primary" data-act="start">Start game</button>` : `<p class="status mut">Waiting for the host to start…</p>`}
+  </div>`;
+}
+
+function renderQuestion(g, pl){
+  const qd = Q[g.q[g.qi]], order = orderFor(g), me = pl.find(isMeP);
+  const mine = me ? answerOf(me, g, g.qi) : null;
+  const reveal = g.ph === 'r';
+  const cls = reveal ? 'reveal' : (mine ? 'locked' : '');
+  const btns = order.map(i => {
+    const c = ['opt']; if (mine && mine[0] === i) c.push('mine'); if (reveal && i === 0) c.push('right'); if (reveal && mine && mine[0] === i && i !== 0) c.push('wrong');
+    return `<button class="${c.join(' ')}" data-act="ans" data-i="${i}">${esc(qd.o[i])}</button>`;
+  }).join('');
+  let below = '';
+  if (!reveal){
+    const answered = pl.filter(p => answerOf(p, g, g.qi)).length;
+    below = `<p class="status">${mine ? 'Locked in! ' : ''}<span class="mut">${answered} of ${pl.length} answered</span></p>
+      <div class="players" style="justify-content:center">${pl.map(p=>`<span class="pl ${answerOf(p,g,g.qi)?'done':''}">${avatar(p)}${esc(p.presence.name)}${answerOf(p,g,g.qi)?' <span class="tick">✓</span>':''}</span>`).join('')}</div>`;
+  } else {
+    const pts = points(mine, g.d);
+    below = `<div class="result ${pts?'good':'bad'}">${pts ? '+' + pts + ' points!' : mine ? 'Not quite!' : "Time's up!"}</div>
+      <p class="center mut" style="margin:0">Answer: <b style="color:#fff">${esc(qd.o[0])}</b></p>${board(g, pl, true)}`;
+  }
+  return `<div class="top" style="margin-bottom:4px"><span class="chip">Q${g.qi+1} of ${g.q.length}</span><span class="chip">${esc(qd.c)}</span><span class="tnum" id="tnum"></span></div>
+    <div class="timer"><i id="tbar"></i></div>
+    <div class="qtext">${esc(qd.q)}</div>
+    <div class="opts ${cls}" id="opts">${btns}</div>${below}`;
+}
+
+function board(g, pl, showDelta){
+  const st = standings(g, pl), medals = ['🥇','🥈','🥉'];
+  return `<div class="board">${st.map((r,i)=>`<div class="br ${isMeP(r.p)?'me':''}"><span class="rk">${g.ph==='o'&&i<3?medals[i]:i+1}</span>${avatar(r.p)}<span class="nm">${esc(r.p.presence.name)}${isMeP(r.p)?'<span class="you">you</span>':''}</span>
+    ${showDelta ? `<span class="dl ${r.last?'g':'b'}">${r.last?'+'+r.last:'✗'}</span>` : `<span class="dl mut">${r.c}/${g.q.length}</span>`}<span class="sc">${r.s}</span></div>`).join('')}</div>`;
+}
+
+function renderOver(g, pl, amHost){
+  const st = standings(g, pl);
+  const top = st[0], tie = st.length > 1 && st[1].s === top.s;
+  let headline = 'Game over!';
+  if (top) headline = st.length === 1 ? `You scored ${top.s}!` : tie ? "It's a tie! 🤝" : `🏆 ${esc(top.p.presence.name)} wins!`;
+  return `<div class="card"><div class="win">${headline}</div>
+    <p class="center mut" style="margin:0">${g.q.length} questions · ${esc(g.cat)}</p>
+    ${board(g, pl, false)}
+    <div class="btns">${amHost ? `<button class="big primary" data-act="again">Play again</button>` : `<p class="status mut">Waiting for the host to start another round…</p>`}
+    <button class="big ghost" data-act="leave">Leave game</button></div></div>`;
+}
+
+function update(){
+  const d = derive();
+  if (S.screen === 'game'){
+    if (d.g){
+      lastGame = d.g;
+      const key = d.g.e + '|' + d.g.ph + '|' + d.g.qi;
+      if (key !== lastKey){ lastKey = key; phaseStart = Date.now(); }
+    }
+    // Two hosts? The earliest keeps it; the other steps down.
+    if (myP.host && d.h && !isMeP(d.h)){ myP.host = false; setP({host:null, hs:null, g:null}); return; }
+  }
+  const html = render(d);
+  if (html !== lastHtml){ lastHtml = html; app.innerHTML = html; }
+  tickVisuals(d);
+}
+
+function tickVisuals(d){
+  const g = d.g; if (!g) return;
+  const total = g.ph === 'q' ? g.d*1000 : g.ph === 'c' ? COUNTDOWN : g.ph === 'r' ? REVEAL : 0;
+  const left = Math.max(0, total - (Date.now() - phaseStart));
+  const bar = document.getElementById('tbar');
+  if (bar) bar.style.width = (g.ph === 'q' && total ? left/total*100 : 0) + '%';
+  const tn = document.getElementById('tnum');
+  if (tn) tn.textContent = g.ph === 'r' ? '' : Math.max(g.ph==='c'?1:0, Math.ceil(left/1000));
+  const opts = document.getElementById('opts');
+  if (opts && g.ph === 'q') opts.classList.toggle('timeup', left <= 0);
+}
+
+// ---------- Host game loop ----------
+function tick(){
+  if (S.screen !== 'game') return;
+  const d = derive(), g = d.g, now = Date.now();
+  if (S.screen === 'game' && !g && Date.now() - S.joinAt > 4000) update();
+  tickVisuals(d);
+  if (d.amHost && g){
+    const el = now - phaseStart;
+    if (g.ph === 'c' && el >= COUNTDOWN) setG({ph:'q', qi:0});
+    else if (g.ph === 'q'){
+      const all = d.pl.length > 0 && d.pl.every(p => answerOf(p, g, g.qi));
+      if (el >= g.d*1000 + 400 || (all && el >= 900)) setG({ph:'r'});
+    } else if (g.ph === 'r' && el >= REVEAL){
+      if (g.qi + 1 < g.q.length) setG({ph:'q', qi:g.qi+1}); else setG({ph:'o'});
+    }
+  }
+  // Host left mid-game: the player with the lowest id takes over after 3 s.
+  if (room && !d.h && lastGame){
+    if (!noHostSince) noHostSince = now;
+    if (now - noHostSince > 3000 && myP.name){
+      const cand = d.pl.map(p => p.peer).sort()[0];
+      if (cand && cand === myPeer){ noHostSince = 0; setP({host:true, hs:Date.now(), g:{...lastGame}}); }
+    }
+  } else noHostSince = 0;
+}
+setInterval(tick, 150);
+
+// ---------- Actions ----------
+function newCode(){ const L='ABCDEFGHJKLMNPQRSTUVWXYZ'; let s=''; for(let i=0;i<4;i++) s+=L[Math.floor(Math.random()*L.length)]; return s; }
+function needName(){
+  const n = (S.name||'').trim();
+  if (!n){ S.err = 'Type your name first.'; update(); return null; }
+  save('td_name', n); return n;
+}
+function baseMe(name, host){
+  const p = {name, col: COLORS[Math.floor(Math.random()*COLORS.length)]};
+  if (host){ p.host = true; p.hs = Date.now(); p.g = {e:0, ph:'l', qi:0, q:[], d:15, n:10, cat:'Mixed'}; }
+  return p;
+}
+async function enter(code, host){
+  const name = needName(); if (!name) return;
+  S.err = '';
+  try{
+    room = await lobby.join('trivia-' + code.toLowerCase());
+    room.onPeers(() => update(), () => {});
+  }catch(e){ room = null; S.err = "Couldn't connect to that room. Try again."; update(); return; }
+  myP = {}; lastGame = null; lastKey = ''; S.code = code; S.solo = false; S.screen = 'game'; S.joinAt = Date.now();
+  setP(baseMe(name, host));
+}
+
+const actions = {
+  create(){ if (lobby) enter(newCode(), true); },
+  join(){
+    const code = (S.code||'').trim().toUpperCase();
+    if (!/^[A-Z]{4}$/.test(code)){ S.err = 'Enter the 4-letter game code.'; update(); return; }
+    if (lobby) enter(code, false);
+  },
+  solo(){
+    const name = needName(); if (!name) return;
+    S.err = ''; room = null; myP = {}; lastGame = null; lastKey = ''; S.solo = true; S.code = 'SOLO'; S.screen = 'game'; S.joinAt = Date.now();
+    setP(baseMe(name, true));
+  },
+  leave(){
+    if (room) room.leave().catch(()=>{});
+    room = null; myP = {}; lastGame = null; lastKey = ''; S.screen = 'home'; S.solo = false; S.code = ''; S.err = '';
+    update();
+  },
+  start(){
+    const g = myP.g; if (!g) return;
+    let pool = Q.map((q,i)=>i); if (g.cat !== 'Mixed') pool = pool.filter(i => Q[i].c === g.cat);
+    const ids = shuffle(pool).slice(0, Math.min(g.n, pool.length));
+    const e = Date.now();
+    setP({g:{...g, e, ph:'c', qi:0, q:ids}, ans:{e, a:{}}});
+  },
+  again(){ setG({ph:'l', qi:0}); },
+  ans(el){
+    const g = derive().g; if (!g || g.ph !== 'q') return;
+    if (Date.now() - phaseStart > g.d*1000) return;
+    let ans = myP.ans; if (!ans || ans.e !== g.e) ans = {e:g.e, a:{}};
+    if (ans.a[g.qi]) return;
+    setP({ans:{e:g.e, a:{...ans.a, [g.qi]:[+el.dataset.i, Date.now() - phaseStart]}}});
+  }
+};
+
+app.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]'); if (!el || el.disabled) return;
+  const f = actions[el.dataset.act]; if (f) f(el);
+});
+app.addEventListener('input', e => {
+  if (e.target.id === 'nm') S.name = e.target.value;
+  if (e.target.id === 'cd'){ e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g,''); S.code = e.target.value; }
+});
+app.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  if (e.target.id === 'cd') actions.join();
+  if (e.target.id === 'nm' && S.mp === 'ok') actions.create();
+});
+app.addEventListener('change', e => {
+  const k = e.target.dataset && e.target.dataset.set; if (!k || !myP.g) return;
+  const v = k === 'cat' ? e.target.value : parseInt(e.target.value, 10);
+  setG({[k]: v});
+});
+
+// ---------- Start ----------
+update();
+(async () => {
+  let tries = 0;
+  while (!(window.claude && window.claude.use) && tries < 30){ await new Promise(r => setTimeout(r, 100)); tries++; }
+  try{ lobby = window.claude && window.claude.use ? await window.claude.use('room') : null; }catch(e){ lobby = null; }
+  S.mp = lobby ? 'ok' : 'off';
+  update();
+})();
+</script>
+</body>
+</html>
