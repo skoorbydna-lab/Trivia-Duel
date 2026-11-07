@@ -7,4 +7,4 @@ A quick-fire multiple-choice trivia game. Same questions, same clock — the fas
 - 500 points for a correct answer plus up to 500 more for speed
 - Solo practice mode
 
-Live multiplayer (game codes) runs when the page is opened as a Claude artifact; on GitHub Pages the game runs in solo mode.
+Live multiplayer uses game codes: one player creates a game, others join with the 4-letter code. On GitHub Pages it runs on Firebase (Firestore collection `trivia_rooms`), so no account is needed; as a Claude artifact it uses Claude rooms.

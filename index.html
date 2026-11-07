@@ -81,6 +81,8 @@ h2{margin:0 0 10px;font-size:22px}
 </head>
 <body>
 <div id="app"></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 // ---------- Question bank: [question, correct, wrong, wrong, wrong] ----------
 const RAW = {
@@ -273,6 +275,18 @@ const REVEAL = 4500, COUNTDOWN = 3000;
 // ---------- State ----------
 const S = {screen:'home', name:load('td_name')||'', code:'', solo:false, err:'', joinAt:0, mp:'loading'};
 let lobby = null, room = null, myP = {}, myPeer = null;
+// Network: 'fb' (Firebase, used on GitHub Pages) or 'room' (Claude-hosted page)
+let NET = null;
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDv3JfyJWQ6BFJ03WQIK4OJ4OnQWNY5uNo",
+  authDomain: "javelin-toss-fe81d.firebaseapp.com",
+  projectId: "javelin-toss-fe81d",
+  storageBucket: "javelin-toss-fe81d.firebasestorage.app",
+  messagingSenderId: "310679295817",
+  appId: "1:310679295817:web:65a93e4940e62a5ae5ac98"
+};
+const ROOMS = 'trivia_rooms', HEARTBEAT = 8000, STALE = 22000;
+let fdb = null, fbRoom = null, fbMe = null, myId = null, roomDoc = null, playerDocs = {}, lastSeen = {}, fbUnsubs = [], hbTimer = null, migrating = false;
 let lastKey = '', phaseStart = Date.now(), lastGame = null, noHostSince = 0, lastHtml = '';
 const orderCache = {};
 const app = document.getElementById('app');
@@ -285,12 +299,44 @@ function shuffle(a){ a = a.slice(); for (let i=a.length-1;i>0;i--){ const j=Math
 // ---------- Presence / room helpers ----------
 function setP(patch){
   for (const k in patch){ if (patch[k] === null) delete myP[k]; else myP[k] = patch[k]; }
-  if (room) room.presence(patch).catch(()=>{});
+  if (NET === 'fb' && fbMe) pushFb(patch);
+  else if (room) room.presence(patch).catch(()=>{});
   update();
+}
+function fbErr(e){
+  S.err = e && e.code === 'permission-denied' ? 'The game server refused access (check the Firestore rules for trivia_rooms).' : "Lost touch with the game server — check your connection.";
+  update();
+}
+function pushFb(patch){
+  const pu = {};
+  for (const k of ['name','col','ans']) if (k in patch) pu[k] = patch[k] === null ? null : patch[k];
+  if (Object.keys(pu).length) fbMe.update(pu).catch(fbErr);
+  if (patch.g && fbAmHost()) fbRoom.update({g: patch.g}).catch(fbErr);
+}
+function fbAmHost(){ return roomDoc ? roomDoc.host === myId : !!myP.host; }
+function fbActive(id){ return id === myId || (playerDocs[id] && Date.now() - (lastSeen[id] || 0) < STALE); }
+function fbPeers(){
+  const out = [];
+  const ids = new Set(Object.keys(playerDocs)); ids.add(myId);
+  for (const id of ids){
+    if (!fbActive(id)) continue;
+    let pres;
+    if (id === myId){
+      pres = {name: myP.name, col: myP.col, ans: myP.ans};
+      if (fbAmHost() && myP.g){ pres.host = true; pres.hs = 1; pres.g = myP.g; }
+    } else {
+      const d = playerDocs[id] || {};
+      pres = {name: d.name, col: d.col, ans: d.ans};
+      if (roomDoc && roomDoc.host === id){ pres.host = true; pres.hs = 1; pres.g = roomDoc.g; }
+    }
+    out.push({peer:id, isMe:id===myId, sameTab:id===myId, kind:'viewer', guest:false, presence:pres});
+  }
+  return out;
 }
 function setG(patch){ setP({g:{...myP.g, ...patch}}); }
 
 function peers(){
+  if (NET === 'fb' && fbMe) return fbPeers();
   if (!room) return [{peer:'solo', isMe:true, sameTab:true, kind:'viewer', presence:myP}];
   const ps = room.peers().filter(p => p.kind !== 'agent');
   let out = [], foundMe = false;
@@ -311,7 +357,8 @@ function hostOf(ps){
 function validGame(g){ return g && Array.isArray(g.q) && typeof g.ph === 'string' && g.q.every(i => Number.isInteger(i) && i>=0 && i<Q.length); }
 function derive(){
   const ps = peers(), pl = players(ps), h = hostOf(ps);
-  const g = h && validGame(h.presence.g) ? h.presence.g : null;
+  let g = h && validGame(h.presence.g) ? h.presence.g : null;
+  if (!g && NET === 'fb' && fbMe && roomDoc && validGame(roomDoc.g)) g = roomDoc.g; // host briefly away
   return {ps, pl, h, g, amHost: !!(h && isMeP(h))};
 }
 function answerOf(p, g, qi){
@@ -364,7 +411,7 @@ function renderHome(){
   <p class="sub">Same questions, same clock. The fastest right answer wins.</p>
   <div class="card">
     <label>Your name<input id="nm" maxlength="16" autocomplete="off" placeholder="e.g. Sam" value="${esc(S.name)}"></label>
-    <button class="big primary" data-act="create" ${ok?'':'disabled'}>${S.mp==='loading'?'Connecting…':'Create a game'}</button>
+    <button class="big primary" data-act="create" ${ok&&!S.busy?'':'disabled'}>${S.mp==='loading'||S.busy?'Connecting…':'Create a game'}</button>
     <div class="or">or join a friend's game</div>
     <div class="row"><input id="cd" maxlength="4" autocomplete="off" placeholder="CODE" value="${esc(S.code)}"><button data-act="join" ${ok?'':'disabled'}>Join</button></div>
     <button class="big ghost" data-act="solo">Solo practice</button>
@@ -476,6 +523,16 @@ function tick(){
       if (g.qi + 1 < g.q.length) setG({ph:'q', qi:g.qi+1}); else setG({ph:'o'});
     }
   }
+  // Firebase: if the host has gone quiet, the active player with the lowest id takes over.
+  if (NET === 'fb' && fbMe && roomDoc && roomDoc.host !== myId && !fbActive(roomDoc.host) && !migrating && validGame(roomDoc.g)){
+    const cand = Object.keys(playerDocs).concat([myId]).filter(fbActive).sort()[0];
+    if (cand === myId){
+      migrating = true;
+      myP.host = true; myP.g = {...roomDoc.g};
+      fbRoom.update({host: myId}).catch(fbErr).finally(() => { migrating = false; });
+      lastKey = ''; update();
+    }
+  }
   // Host left mid-game: the player with the lowest id takes over after 3 s.
   if (room && !d.h && lastGame){
     if (!noHostSince) noHostSince = now;
@@ -499,7 +556,60 @@ function baseMe(name, host){
   if (host){ p.host = true; p.hs = Date.now(); p.g = {e:0, ph:'l', qi:0, q:[], d:15, n:10, cat:'Mixed'}; }
   return p;
 }
+function rid(){ const a = new Uint8Array(8); crypto.getRandomValues(a); return Array.from(a, b => b.toString(16).padStart(2,'0')).join(''); }
+async function enterFb(code, host){
+  const name = needName(); if (!name) return;
+  if (S.busy) return;
+  S.err = ''; S.busy = true; update();
+  try{
+    const coll = fdb.collection(ROOMS);
+    if (host){
+      for (let i = 0; i < 6; i++){ const s = await coll.doc(code).get(); if (!s.exists) break; code = newCode(); }
+    } else {
+      const s = await coll.doc(code).get();
+      if (!s.exists){ S.busy = false; S.err = `No game found with code ${code}. Check the code, or ask the host to create the game first.`; update(); return; }
+    }
+    myId = rid(); fbRoom = coll.doc(code); fbMe = fbRoom.collection('players').doc(myId);
+    roomDoc = null; playerDocs = {}; lastSeen = {};
+    myP = baseMe(name, host);
+    const ts = firebase.firestore.FieldValue.serverTimestamp();
+    if (host) await fbRoom.set({host: myId, g: myP.g, t: ts});
+    await fbMe.set({name: myP.name, col: myP.col, ans: null, hb: 0, t: ts});
+  }catch(e){ S.busy = false; fbMe = null; fbErr(e); return; }
+  S.busy = false; lastGame = null; lastKey = ''; S.code = code; S.solo = false; S.screen = 'game'; S.joinAt = Date.now();
+  fbUnsubs.push(fbRoom.onSnapshot(s => {
+    roomDoc = s.exists ? s.data() : null;
+    if (roomDoc && roomDoc.host !== myId && myP.host){ delete myP.host; delete myP.g; }
+    update();
+  }, fbErr));
+  fbUnsubs.push(fbRoom.collection('players').onSnapshot(snap => {
+    snap.docChanges().forEach(ch => {
+      const id = ch.doc.id;
+      if (ch.type === 'removed'){ delete playerDocs[id]; delete lastSeen[id]; return; }
+      const d = ch.doc.data(), prev = playerDocs[id];
+      if (!prev || prev.hb !== d.hb) lastSeen[id] = Date.now();
+      playerDocs[id] = d;
+    });
+    update();
+  }, fbErr));
+  let hb = 0;
+  hbTimer = setInterval(() => { if (fbMe) fbMe.update({hb: ++hb}).catch(() => {}); }, HEARTBEAT);
+  update();
+}
+function leaveFb(){
+  fbUnsubs.forEach(u => { try{ u(); }catch(e){} }); fbUnsubs = [];
+  clearInterval(hbTimer); hbTimer = null;
+  if (fbMe){
+    const others = Object.keys(playerDocs).filter(id => id !== myId && fbActive(id));
+    fbMe.delete().catch(() => {});
+    if (fbAmHost() && !others.length && fbRoom) fbRoom.delete().catch(() => {});
+  }
+  fbMe = null; fbRoom = null; roomDoc = null; playerDocs = {}; lastSeen = {}; myId = null;
+}
+window.addEventListener('pagehide', () => { if (fbMe) fbMe.delete().catch(() => {}); });
+
 async function enter(code, host){
+  if (NET === 'fb') return enterFb(code, host);
   const name = needName(); if (!name) return;
   S.err = '';
   try{
@@ -511,11 +621,11 @@ async function enter(code, host){
 }
 
 const actions = {
-  create(){ if (lobby) enter(newCode(), true); },
+  create(){ if (S.mp === 'ok') enter(newCode(), true); },
   join(){
     const code = (S.code||'').trim().toUpperCase();
     if (!/^[A-Z]{4}$/.test(code)){ S.err = 'Enter the 4-letter game code.'; update(); return; }
-    if (lobby) enter(code, false);
+    if (S.mp === 'ok') enter(code, false);
   },
   solo(){
     const name = needName(); if (!name) return;
@@ -524,6 +634,7 @@ const actions = {
   },
   leave(){
     if (room) room.leave().catch(()=>{});
+    if (NET === 'fb') leaveFb();
     room = null; myP = {}; lastGame = null; lastKey = ''; S.screen = 'home'; S.solo = false; S.code = ''; S.err = '';
     update();
   },
@@ -566,6 +677,11 @@ app.addEventListener('change', e => {
 // ---------- Start ----------
 update();
 (async () => {
+  if (window.firebase){
+    try{ firebase.initializeApp(FIREBASE_CONFIG); fdb = firebase.firestore(); NET = 'fb'; S.mp = 'ok'; update(); return; }
+    catch(e){ fdb = null; }
+  }
+  NET = 'room';
   let tries = 0;
   while (!(window.claude && window.claude.use) && tries < 30){ await new Promise(r => setTimeout(r, 100)); tries++; }
   try{ lobby = window.claude && window.claude.use ? await window.claude.use('room') : null; }catch(e){ lobby = null; }
