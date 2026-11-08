@@ -1,10 +1,18 @@
 # Trivia Duel
 
-A quick-fire multiple-choice trivia game. Same questions, same clock — the fastest right answer scores the most points.
+A quick-fire multiple-choice trivia game with a British flavour. Same questions, same clock — the fastest right answer scores the most points.
 
-- 479 questions with a British flavour (316 Hard, 163 Standard) across General Knowledge, Science & Nature, Geography, History, Sport, Maths & Numbers, Words & Language, and Books, TV & Music
-- Choose a difficulty (Hard, Standard or Mixed), a category, 5–20 questions and 10–30 seconds per question
+## Daily Quiz
+- 10 hard questions every day, always one from each category plus two extras
+- Everyone gets the same questions on the same (UK) day; one attempt only
+- Players create a name once; the device remembers them, and they can save to Google to carry their player to other devices
+- Leaderboards: Today, All-time (total points) and Streaks (days in a row)
+- 240 questions kept only for the Daily Quiz; no repeats for 24 days
+
+## Games
+- Live multiplayer with 4-letter game codes, or solo practice
+- 479 game questions (316 Hard, 163 Standard) across General Knowledge, Science & Nature, Geography, History, Sport, Maths & Numbers, Words & Language, and Books, TV & Music
+- Choose difficulty, category, 5–20 questions and 10–30 seconds per question
 - 500 points for a correct answer plus up to 500 more for speed
-- Solo practice mode
 
-Live multiplayer uses game codes: one player creates a game, others join with the 4-letter code. On GitHub Pages it runs on Firebase (Firestore collection `trivia_rooms`), so no account is needed; as a Claude artifact it uses Claude rooms.
+Runs on Firebase (Firestore collections `trivia_rooms`, `trivia_players`, `trivia_daily`).

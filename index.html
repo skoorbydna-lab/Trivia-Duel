@@ -76,12 +76,26 @@ h2{margin:0 0 10px;font-size:22px}
 .win{font-size:34px;font-weight:700;text-align:center;margin:6px 0}
 .btns{display:flex;flex-direction:column;gap:10px;margin-top:18px}
 .you{font-size:12px;color:var(--acc);margin-left:4px}
+.daily{margin-bottom:16px;background:linear-gradient(135deg,rgba(255,210,63,.18),rgba(255,93,143,.12));border-color:rgba(255,210,63,.35)}
+.dhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dtitle{font-size:24px;font-weight:700}
+.dstat{margin:8px 0 14px;line-height:1.4}
+.drow{display:flex;justify-content:space-between;gap:8px;margin-top:10px;flex-wrap:wrap}
+.link{background:transparent;color:#fff;padding:6px 2px;font-size:16px;font-weight:500;text-decoration:underline;text-underline-offset:3px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin:12px 0 18px}
+.stats div{background:rgba(0,0,0,.22);border-radius:14px;padding:10px;text-align:center}
+.stats b{display:block;font-size:24px}
+.stats span{font-size:13px;color:var(--mut)}
+.tabs{display:flex;gap:6px;background:rgba(0,0,0,.25);padding:5px;border-radius:14px}
+.tab{flex:1;background:transparent;color:#fff;padding:10px 6px;font-size:16px;border-radius:10px}
+.tab.on{background:var(--acc);color:#1a0f3a}
 @media (max-width:420px){.qtext{font-size:22px}.opt{font-size:17px;min-height:78px}.logo{font-size:38px}.code{font-size:46px}.settings{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div id="app"></div>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 // ---------- Question bank: [question, correct, wrong, wrong, wrong] ----------
@@ -615,11 +629,269 @@ const RAW_HARD2 = {
 ["Sculptor Henry Moore was born in which county?","Yorkshire","Lancashire","Durham","Cornwall"],
 ["Who composed the music for the hymn 'Jerusalem'?","Hubert Parry","Edward Elgar","Gustav Holst","Ralph Vaughan Williams"]
 ]};
+const RAW_DAILY = {
+"General Knowledge":[
+["Which London bridge is a bascule bridge that opened in 1894?","Tower Bridge","London Bridge","Westminster Bridge","Blackfriars Bridge"],
+["Which motorway runs from London to Leeds?","M1","M6","M4","M62"],
+["Which motorway crosses the Pennines between Liverpool and Hull?","M62","M6","M56","M18"],
+["Which famous department store stands on Brompton Road, Knightsbridge?","Harrods","Selfridges","Liberty","Fortnum & Mason"],
+["Which Oxford Street store was founded in 1909 by an American?","Selfridges","Harrods","John Lewis","Debenhams"],
+["What has been the UK's highest court since 2009?","The Supreme Court","The House of Lords","The Court of Appeal","The High Court"],
+["In 'BBC', what does the C stand for?","Corporation","Company","Channel","Council"],
+["Which London museum houses the Rosetta Stone?","British Museum","V&A","Natural History Museum","Science Museum"],
+["Which creature appears on the Welsh flag?","A dragon","A lion","A unicorn","A griffin"],
+["Which nation's flag is not part of the Union Flag?","Wales","England","Scotland","Ireland (St Patrick's cross)"],
+["Which London theatre is a reconstruction of Shakespeare's playhouse?","The Globe","The Old Vic","The Palladium","The Lyceum"],
+["What was 'half a crown' worth in old money?","2s 6d","5s","1s","2s"],
+["What was a 'tanner' in old money?","Sixpence","A shilling","A penny","A pound"],
+["What was a 'bob' in old money slang?","A shilling","Sixpence","A pound","A penny"],
+["In which city is the Royal Liver Building?","Liverpool","Manchester","Leeds","Bristol"],
+["Which of these banks issues its own banknotes in Scotland?","Royal Bank of Scotland","Barclays","Santander","Nationwide"],
+["How many squares are on a chessboard?","64","81","100","49"],
+["How many spots are there in total on a standard die?","21","18","24","36"],
+["Which board game features Old Kent Road and Mayfair?","Monopoly","Cluedo","Scrabble","Risk"],
+["What is the name of the murder victim in the UK version of Cluedo?","Dr Black","Professor Plum","Colonel Mustard","Mrs Peacock"],
+["How many points is the letter Q worth in English Scrabble?","10","8","5","12"],
+["Which supermarket began as Jack Cohen's market stall?","Tesco","Sainsbury's","Asda","Morrisons"],
+["Which chocolate maker built the village of Bournville?","Cadbury","Rowntree's","Fry's","Thorntons"],
+["Rowntree's confectionery is most associated with which city?","York","Leeds","Bristol","Birmingham"],
+["What is the traditional colour of a London taxi?","Black","Yellow","White","Green"],
+["In which Scottish city is the Fringe arts festival held?","Edinburgh","Glasgow","Aberdeen","Inverness"],
+["What is the title of the UK national anthem?","God Save the King","Rule, Britannia!","Jerusalem","Land of Hope and Glory"],
+["In which town does the Angel of the North stand?","Gateshead","Newcastle","Sunderland","Durham"],
+["Which saint's cross is on the flag of Scotland?","St Andrew","St George","St Patrick","St David"],
+["Which children's TV programme gives out famous badges?","Blue Peter","Newsround","Grange Hill","Swap Shop"]
+],
+"Science & Nature":[
+["Sn is the chemical symbol for which element?","Tin","Titanium","Sodium","Silicon"],
+["Hg is the chemical symbol for which element?","Mercury","Hydrogen","Helium","Hafnium"],
+["Cu is the chemical symbol for which element?","Copper","Curium","Calcium","Cobalt"],
+["Which element has atomic number 6?","Carbon","Oxygen","Nitrogen","Boron"],
+["Which gas is given off when a metal reacts with an acid?","Hydrogen","Oxygen","Carbon dioxide","Chlorine"],
+["What is the lab test result for hydrogen gas?","A squeaky pop","It relights a glowing splint","It turns limewater milky","It bleaches litmus paper"],
+["Which gas turns limewater milky?","Carbon dioxide","Oxygen","Hydrogen","Chlorine"],
+["What is the SI unit of force?","Newton","Joule","Pascal","Watt"],
+["What is the SI unit of power?","Watt","Joule","Newton","Volt"],
+["What is the SI unit of frequency?","Hertz","Decibel","Joule","Tesla"],
+["Which colour of visible light has the longest wavelength?","Red","Violet","Green","Blue"],
+["Roughly what is the acceleration due to gravity on Earth?","9.8 m/s²","8.9 m/s²","10.8 m/s²","1.6 m/s²"],
+["Roughly how long does sunlight take to reach Earth?","8 minutes","8 seconds","8 hours","80 minutes"],
+["What is the name of our galaxy?","The Milky Way","Andromeda","Triangulum","Whirlpool"],
+["Which planet rotates on its side?","Uranus","Neptune","Saturn","Venus"],
+["Which is the hottest planet in the solar system?","Venus","Mercury","Mars","Jupiter"],
+["Which part of a plant cell carries out photosynthesis?","Chloroplast","Mitochondrion","Vacuole","Nucleus"],
+["What are proteins made from?","Amino acids","Fatty acids","Glucose","Starch"],
+["Which enzyme in saliva starts breaking down starch?","Amylase","Lipase","Protease","Pepsin"],
+["Which organ filters the blood to make urine?","Kidney","Liver","Bladder","Spleen"],
+["What is the common name for the clavicle?","Collarbone","Kneecap","Shinbone","Breastbone"],
+["What is the common name for the patella?","Kneecap","Collarbone","Shoulder blade","Heel bone"],
+["Which of these British mammals truly hibernates?","Hedgehog","Fox","Badger","Grey squirrel"],
+["Which is usually named as the UK's smallest bird?","Goldcrest","Wren","Blue tit","Robin"],
+["Which bird of prey is the fastest animal in a dive?","Peregrine falcon","Kestrel","Golden eagle","Sparrowhawk"],
+["Conkers are the seeds of which tree?","Horse chestnut","Sweet chestnut","Oak","Beech"],
+["Which tree's winged seeds are nicknamed 'helicopters'?","Sycamore","Oak","Beech","Birch"],
+["Who invented the World Wide Web?","Tim Berners-Lee","Alan Turing","Charles Babbage","Bill Gates"],
+["Who designed the Victorian 'Analytical Engine'?","Charles Babbage","Alan Turing","Isambard Kingdom Brunel","Tim Berners-Lee"],
+["Who is often called the first computer programmer?","Ada Lovelace","Charles Babbage","Alan Turing","Grace Hopper"]
+],
+"Geography":[
+["Which river flows through Chester?","Dee","Mersey","Weaver","Severn"],
+["Which river flows past Liverpool?","Mersey","Dee","Ribble","Irwell"],
+["Which river flows through Shrewsbury?","Severn","Wye","Teme","Dee"],
+["Which river forms the England–Wales border at Chepstow?","Wye","Severn","Dee","Usk"],
+["Which hills are called 'the backbone of England'?","Pennines","Cotswolds","Chilterns","Malverns"],
+["Which area is famous for honey-coloured limestone villages?","Cotswolds","Chilterns","Mendips","North Downs"],
+["Cheddar Gorge is in which hills?","Mendip Hills","Quantock Hills","Malvern Hills","Chiltern Hills"],
+["In which county is Dartmoor?","Devon","Cornwall","Somerset","Dorset"],
+["What is the fossil-rich World Heritage coastline of Dorset and East Devon called?","Jurassic Coast","Fossil Coast","Heritage Coast","Cretaceous Coast"],
+["In which county is the Giant's Causeway?","County Antrim","County Down","County Armagh","County Fermanagh"],
+["Which Welsh city stands on the River Tawe?","Swansea","Newport","Cardiff","Bangor"],
+["Which is the most northerly city in the UK?","Inverness","Aberdeen","Dundee","Perth"],
+["Which is Britain's largest lake by volume?","Loch Ness","Loch Lomond","Loch Morar","Loch Tay"],
+["Which strait separates the Isle of Wight from the mainland?","The Solent","The Minch","The Wash","Menai Strait"],
+["What is the Wash?","A bay between Lincolnshire and Norfolk","A Scottish sea loch","A river in Cornwall","A valley in Wales"],
+["The Minch separates the Outer Hebrides from where?","Mainland Scotland","Ireland","Orkney","The Isle of Man"],
+["Which island group is the most northerly part of the UK?","Shetland","Orkney","Outer Hebrides","Inner Hebrides"],
+["What is the capital of Norway?","Oslo","Bergen","Stockholm","Copenhagen"],
+["What is the capital of Poland?","Warsaw","Kraków","Gdańsk","Prague"],
+["What is the capital of Hungary?","Budapest","Bucharest","Belgrade","Vienna"],
+["What is the capital of Portugal?","Lisbon","Porto","Madrid","Faro"],
+["What is the capital of Argentina?","Buenos Aires","Santiago","Montevideo","Lima"],
+["What is the capital of South Korea?","Seoul","Busan","Pyongyang","Incheon"],
+["Which country has the longest coastline in the world?","Canada","Russia","Australia","Norway"],
+["What is the largest country in Africa by area?","Algeria","DR Congo","Sudan","Libya"],
+["Which mountain range separates France and Spain?","Pyrenees","Alps","Apennines","Atlas"],
+["Which river flows through Rome?","Tiber","Arno","Po","Adige"],
+["On which island is Mount Etna?","Sicily","Sardinia","Corsica","Crete"],
+["Which river flows through Manchester city centre?","Irwell","Ribble","Tame","Aire"],
+["Which river flows through the city of Bath?","Avon","Severn","Thames","Frome"]
+],
+"History":[
+["Which king was killed by an arrow while hunting in the New Forest in 1100?","William II","Harold II","Henry I","Richard I"],
+["Which battle did Harold II win just weeks before Hastings?","Stamford Bridge","Fulford","Maldon","Edington"],
+["What was the Viking-ruled part of England called?","Danelaw","Wessex","Mercia","Northumbria"],
+["Which Anglo-Saxon kingdom did Alfred the Great rule?","Wessex","Mercia","Northumbria","East Anglia"],
+["In which county is the Sutton Hoo ship burial?","Suffolk","Norfolk","Essex","Kent"],
+["Which king was nicknamed 'the Lionheart'?","Richard I","Henry II","John","Edward I"],
+["Which archbishop was murdered in Canterbury Cathedral in 1170?","Thomas Becket","Thomas Cranmer","Anselm","William Laud"],
+["Which king was called 'Longshanks' and 'Hammer of the Scots'?","Edward I","Edward II","Edward III","Henry III"],
+["Which Scottish leader was executed in London in 1305?","William Wallace","Robert the Bruce","Rob Roy","Bonnie Prince Charlie"],
+["Which Tudor king's warship was the Mary Rose?","Henry VIII","Henry VII","Edward VI","Elizabeth I"],
+["In which city can the Mary Rose be seen today?","Portsmouth","Southampton","Plymouth","Bristol"],
+["Which former Lord Chancellor was executed in 1535 for opposing Henry VIII?","Thomas More","Thomas Cromwell","Thomas Wolsey","Thomas Cranmer"],
+["Who was the 'Nine Days' Queen'?","Lady Jane Grey","Mary I","Anne Boleyn","Catherine Howard"],
+["Which Elizabethan courtier sponsored the Roanoke colony and was executed in 1618?","Walter Raleigh","Francis Drake","Robert Dudley","John Hawkins"],
+["What was Parliament's professional army in the Civil War called?","New Model Army","Cavaliers","Trained Bands","Royal Guard"],
+["What was the first major battle of the English Civil War, in 1642?","Edgehill","Naseby","Marston Moor","Worcester"],
+["Which king was restored to the throne in 1660?","Charles II","James II","Charles I","William III"],
+["Who came to the throne in the 'Glorious Revolution' of 1688?","William III and Mary II","George I","Charles II","Anne"],
+["Which royal house began with George I in 1714?","Hanover","Saxe-Coburg and Gotha","Windsor","Tudor"],
+["What did the British royal family rename itself in 1917?","Windsor","Mountbatten","Hanover","York"],
+["Which 1815 battle ended Napoleon's rule?","Waterloo","Trafalgar","Austerlitz","Leipzig"],
+["Who commanded the British army at Waterloo?","Duke of Wellington","Lord Nelson","Duke of Marlborough","General Wolfe"],
+["In which war did Florence Nightingale nurse soldiers?","Crimean War","Boer War","World War I","Napoleonic Wars"],
+["Which Jamaican-born nurse also cared for Crimean War soldiers?","Mary Seacole","Edith Cavell","Elizabeth Fry","Grace Darling"],
+["Which suffragette was fatally injured by the King's horse at the 1913 Derby?","Emily Wilding Davison","Emmeline Pankhurst","Annie Kenney","Sylvia Pankhurst"],
+["Which liner was sunk by a German U-boat in 1915?","Lusitania","Titanic","Britannic","Queen Mary"],
+["What was the codename for the 1940 Dunkirk evacuation?","Operation Dynamo","Operation Overlord","Operation Sea Lion","Operation Market Garden"],
+["Who was Prime Minister when the NHS was founded?","Clement Attlee","Winston Churchill","Anthony Eden","Harold Macmillan"],
+["In which year did the Channel Tunnel open?","1994","1990","1998","1987"],
+["In which year did Britain hand Hong Kong back to China?","1997","1999","1984","2001"]
+],
+"Sport":[
+["Which football club is nicknamed 'the Seagulls'?","Brighton & Hove Albion","Southampton","Plymouth Argyle","Portsmouth"],
+["Which Premier League club is nicknamed 'the Saints'?","Southampton","Portsmouth","Brighton & Hove Albion","Bournemouth"],
+["Which football club is nicknamed 'the Cherries'?","Bournemouth","Charlton Athletic","Crystal Palace","Watford"],
+["Which football club is nicknamed 'the Hornets'?","Watford","Brentford","Wycombe Wanderers","Stevenage"],
+["Which football club is nicknamed 'the Blades'?","Sheffield United","Sheffield Wednesday","Rotherham United","Barnsley"],
+["Which club plays at Stamford Bridge?","Chelsea","Fulham","Crystal Palace","QPR"],
+["Which club plays at Craven Cottage?","Fulham","QPR","Brentford","Chelsea"],
+["When was the first Premier League season?","1992–93","1990–91","1995–96","1988–89"],
+["Which country won the first football World Cup in 1930?","Uruguay","Brazil","Argentina","Italy"],
+["Who scored a hat-trick in the 1966 World Cup final?","Geoff Hurst","Bobby Charlton","Martin Peters","Roger Hunt"],
+["What has Wales's national stadium in Cardiff been called since 2016?","Principality Stadium","Millennium Stadium","Cardiff Arms Park","Ninian Park"],
+["Which trophy is played for between England and Scotland in rugby union?","Calcutta Cup","Triple Crown","Webb Ellis Cup","Bledisloe Cup"],
+["What 'prize' goes to the bottom team in the Six Nations?","The Wooden Spoon","The Grand Slam","The Triple Crown","The Golden Boot"],
+["Henley Royal Regatta is an event in which sport?","Rowing","Sailing","Canoeing","Swimming"],
+["Cowes Week is an event in which sport?","Sailing","Rowing","Horse racing","Cycling"],
+["At which racecourse is the Derby run?","Epsom","Ascot","Aintree","Newmarket"],
+["In which county is Ascot racecourse?","Berkshire","Surrey","Kent","Oxfordshire"],
+["What type of racing is the Cheltenham Festival?","Jump racing","Flat racing","Harness racing","Greyhound racing"],
+["Who won the Wimbledon women's singles in 1977?","Virginia Wade","Sue Barker","Ann Jones","Jo Durie"],
+["Which British teenager won the 2021 US Open as a qualifier?","Emma Raducanu","Johanna Konta","Heather Watson","Katie Boulter"],
+["Which Welshman won the 2018 Tour de France?","Geraint Thomas","Chris Froome","Bradley Wiggins","Mark Cavendish"],
+["How many Tour de France stage wins did Mark Cavendish set as the record in 2024?","35","34","30","40"],
+["Which British swimmer won 100 m breaststroke gold in 2016 and 2020?","Adam Peaty","Duncan Goodhew","Rebecca Adlington","Michael Jamieson"],
+["In which sport is Tom Daley an Olympic champion?","Diving","Swimming","Gymnastics","Rowing"],
+["Who won rowing gold at five Olympics in a row, 1984–2000?","Steve Redgrave","Matthew Pinsent","James Cracknell","Ben Ainslie"],
+["In which sport is Ben Ainslie a four-time Olympic champion?","Sailing","Rowing","Canoeing","Swimming"],
+["Which British boxer was known as 'Our 'Enry'?","Henry Cooper","Frank Bruno","Lennox Lewis","Joe Calzaghe"],
+["How long is a rugby union match, not counting stoppages?","80 minutes","90 minutes","70 minutes","60 minutes"],
+["How many points is the black ball worth in snooker?","7","6","5","8"],
+["How many red balls are on the table at the start of a snooker frame?","15","10","12","21"]
+],
+"Maths & Numbers":[
+["What is 18 × 19?","342","332","352","324"],
+["What is 2/3 of 3/4?","1/2","5/7","1/4","6/7"],
+["What is 1/2 + 1/3 + 1/6?","1","5/6","3/11","2/3"],
+["What is 999 × 4?","3996","3696","3966","4036"],
+["What is the sum of the first 10 odd numbers?","100","90","110","55"],
+["What is 0.625 as a fraction?","5/8","3/5","5/6","6/25"],
+["What comes next: 2, 6, 12, 20, 30, …?","42","40","36","44"],
+["What is the next prime number after 89?","97","91","93","95"],
+["How many seconds are in an hour?","3600","360","6000","1440"],
+["What is each interior angle of a regular hexagon?","120°","108°","135°","60°"],
+["How many lines of symmetry does a regular hexagon have?","6","3","4","12"],
+["What is the order of rotational symmetry of a square?","4","2","1","8"],
+["What is the area of a triangle with base 10 cm and height 6 cm?","30 cm²","60 cm²","16 cm²","36 cm²"],
+["What is the circumference of a circle with diameter 10?","10π","20π","100π","5π"],
+["What is 2 to the power of 8?","256","128","512","64"],
+["What is √0.81?","0.9","0.09","0.18","0.405"],
+["What is 10% of 10% of 10% of 1000?","1","10","0.1","100"],
+["Expand (x + 3)(x − 3).","x² − 9","x² + 9","x² − 6x − 9","x² + 6x − 9"],
+["What are the solutions of x² = 49?","x = ±7","x = 7 only","x = ±49","x = 24.5"],
+["What is 4x − 1 when x = −2?","−9","−7","7","9"],
+["What is the probability of drawing a heart from a full pack of cards?","1/4","1/13","1/2","1/52"],
+["What is the probability of drawing an ace from a full pack of cards?","1/13","1/4","1/52","4/13"],
+["What is the mode of 3, 7, 7, 2, 9, 7, 3?","7","3","5.4","9"],
+["What is the median of 4, 8, 1, 9, 6?","6","4","5.6","8"],
+["What is the range of 12, 5, 19, 7?","14","19","7","12"],
+["A car travels 150 miles in 2.5 hours. What is its average speed?","60 mph","65 mph","55 mph","75 mph"],
+["What is 7/8 as a decimal?","0.875","0.78","0.825","0.857"],
+["How many faces does an icosahedron have?","20","12","30","24"],
+["What is the smallest three-digit prime number?","101","103","100","107"],
+["What is 12 × 12 × 12?","1728","1444","1278","1696"]
+],
+"Words & Language":[
+["What does 'gormless' mean?","Foolish","Brave","Hungry","Bad-tempered"],
+["What does 'chuffed' mean?","Very pleased","Out of breath","Annoyed","Confused"],
+["What does 'gobsmacked' mean?","Astonished","Hungry","Angry","Bored"],
+["What does 'skint' mean?","Having no money","Very thin","Freezing cold","Very tired"],
+["What is a 'brolly'?","An umbrella","A sweet","A small dog","A hat"],
+["In Scotland, what is a 'ben'?","A mountain","A valley","A lake","A cottage"],
+["What is a 'glen'?","A valley","A mountain","A lake","A forest"],
+["In the Lake District, what is a 'tarn'?","A small mountain lake","A waterfall","A footpath","A stone wall"],
+["In northern England, what is a 'fell'?","A hill or mountain","A river","A forest","A village"],
+["In northern England, what is a 'beck'?","A stream","A hill","A lane","A barn"],
+["In Cockney rhyming slang, what is a 'butcher's'?","A look","A book","A cook","A crook"],
+["In Cockney rhyming slang, what are 'porkies'?","Lies","Eyes","Thighs","Pies"],
+["In Cockney rhyming slang, what is your 'barnet'?","Hair","Chair","Stairs","Fare"],
+["What does the prefix 'hemi-' mean?","Half","Blood","Many","Water"],
+["What does the prefix 'chrono-' refer to?","Time","Colour","Light","Sound"],
+["What does 'philo-' mean in words like philosophy?","Love","Fear","Wisdom","Light"],
+["From which language does the word 'bungalow' come?","Hindi","Arabic","Malay","Portuguese"],
+["From which language does the word 'shampoo' come?","Hindi","French","Arabic","Persian"],
+["From which language does the word 'robot' come?","Czech","Russian","German","Polish"],
+["Which of these words is a noun?","Happiness","Happy","Happily","Happen"],
+["In 'She sang beautifully', what type of word is 'beautifully'?","Adverb","Adjective","Verb","Noun"],
+["Which of these words is a conjunction?","Because","Quickly","Under","Bright"],
+["What is the simple past tense of 'swim'?","Swam","Swum","Swimmed","Swammed"],
+["What is the syllable pattern of a haiku?","5-7-5","7-5-7","5-5-7","3-5-3"],
+["How many lines does a sonnet have?","14","12","10","16"],
+["What is the plural of 'phenomenon'?","Phenomena","Phenomenons","Phenomenae","Phenomenum"],
+["Which word means 'to make something less severe'?","Mitigate","Militate","Exacerbate","Aggravate"],
+["What does 'exacerbate' mean?","Make worse","Make better","Exaggerate","Remove"],
+["What is the opposite of 'benevolent'?","Malevolent","Benign","Generous","Placid"],
+["What is a spoonerism?","Swapping the first sounds of words","A word that sounds like its meaning","A rhyming couplet","Slang for food"]
+],
+"Books, TV & Music":[
+["Who wrote Jane Eyre?","Charlotte Brontë","Emily Brontë","Anne Brontë","Jane Austen"],
+["Who wrote Emma?","Jane Austen","George Eliot","Charlotte Brontë","Fanny Burney"],
+["Who wrote Tess of the d'Urbervilles?","Thomas Hardy","D.H. Lawrence","E.M. Forster","Charles Dickens"],
+["In A Christmas Carol, what is Scrooge's first name?","Ebenezer","Jacob","Bob","Fezziwig"],
+["Who was Scrooge's dead business partner?","Jacob Marley","Bob Cratchit","Mr Fezziwig","Tiny Tim"],
+["Which Dickens novel is set in London and Paris during the French Revolution?","A Tale of Two Cities","Barnaby Rudge","Little Dorrit","Nicholas Nickleby"],
+["Who wrote Dracula?","Bram Stoker","Mary Shelley","Robert Louis Stevenson","Oscar Wilde"],
+["Who wrote The Picture of Dorian Gray?","Oscar Wilde","Bram Stoker","H.G. Wells","Arthur Conan Doyle"],
+["Who wrote Strange Case of Dr Jekyll and Mr Hyde?","Robert Louis Stevenson","Bram Stoker","Oscar Wilde","Arthur Conan Doyle"],
+["Who wrote Gulliver's Travels?","Jonathan Swift","Daniel Defoe","Henry Fielding","Laurence Sterne"],
+["Who wrote Alice's Adventures in Wonderland?","Lewis Carroll","Kenneth Grahame","J.M. Barrie","A.A. Milne"],
+["Who created Peter Pan?","J.M. Barrie","Lewis Carroll","A.A. Milne","Kenneth Grahame"],
+["Who wrote Winnie-the-Pooh?","A.A. Milne","Beatrix Potter","Michael Bond","Kenneth Grahame"],
+["Who wrote the His Dark Materials trilogy?","Philip Pullman","Terry Pratchett","J.K. Rowling","Neil Gaiman"],
+["Who wrote War Horse?","Michael Morpurgo","Roald Dahl","Anthony Horowitz","Philip Pullman"],
+["Which Shakespeare play features Shylock?","The Merchant of Venice","Othello","Twelfth Night","The Tempest"],
+["Which Shakespeare play features Prospero?","The Tempest","A Midsummer Night's Dream","Macbeth","As You Like It"],
+["In which Shakespeare play do Oberon and Titania appear?","A Midsummer Night's Dream","The Tempest","Twelfth Night","Much Ado About Nothing"],
+["Which band released 'Bohemian Rhapsody'?","Queen","ELO","The Who","Genesis"],
+["Sting was the lead singer of which band?","The Police","The Jam","The Clash","Dire Straits"],
+["Paul Weller fronted which band?","The Jam","The Police","The Clash","Madness"],
+["Which Welsh singer had a hit with 'It's Not Unusual'?","Tom Jones","Shirley Bassey","Bonnie Tyler","Shakin' Stevens"],
+["Who sang the Bond themes 'Goldfinger' and 'Diamonds Are Forever'?","Shirley Bassey","Adele","Tom Jones","Lulu"],
+["Roger Daltrey and Pete Townshend were members of which band?","The Who","The Kinks","The Rolling Stones","Small Faces"],
+["Which sitcom is set in the Grace Brothers department store?","Are You Being Served?","Open All Hours","The Office","Dad's Army"],
+["In which sitcom is David Brent the boss?","The Office","Extras","Gavin & Stacey","Peep Show"],
+["Gavin & Stacey is set partly in Essex and partly in which Welsh town?","Barry","Swansea","Newport","Rhyl"],
+["In which city is Inspector Morse set?","Oxford","Cambridge","Bath","York"],
+["Which anti-corruption unit is at the centre of Line of Duty?","AC-12","CID","The Flying Squad","Special Branch"],
+["Which artist painted the horse portrait Whistlejacket?","George Stubbs","Thomas Gainsborough","John Constable","J.M.W. Turner"]
+]};
 const CATS = Object.keys(RAW);
 const Q = [];
 for (const c of CATS) for (const r of RAW[c]) Q.push({c, lv:'s', q:r[0], o:r.slice(1)});
 for (const c of CATS) for (const r of (RAW_HARD[c]||[])) Q.push({c, lv:'h', q:r[0], o:r.slice(1)});
 for (const c of CATS) for (const r of (RAW_HARD2[c]||[])) Q.push({c, lv:'h', q:r[0], o:r.slice(1)});
+for (const c of CATS) for (const r of (RAW_DAILY[c]||[])) Q.push({c, lv:'d', q:r[0], o:r.slice(1)}); // daily quiz only
 const LEVELS = {h:'Hard', s:'Standard', m:'Mixed'};
 
 const COLORS = ['#ff5d8f','#4cc9f0','#ffd23f','#7bd389','#b388ff','#ff9f43','#00d1b2','#ff8fab','#a0e7e5','#f4a261'];
@@ -743,14 +1015,20 @@ function avatar(p){ return `<span class="av" style="background:${colorOf(p)}">${
 // ---------- Rendering ----------
 function render(d){
   if (S.screen === 'home') return renderHome();
+  if (S.screen === 'profile') return renderProfile();
+  if (S.screen === 'daily') return renderDailyIntro();
+  if (S.screen === 'boards') return renderBoards();
   const {g, pl, amHost} = d;
-  const head = `<div class="top"><span class="chip">${S.solo ? 'Solo practice' : 'Room ' + esc(S.code)}</span><button class="leave" data-act="leave">Leave</button></div>`;
+  const quitLabel = S.daily && g && g.ph !== 'o' ? (Date.now() - (S.quitArm||0) < 4000 ? 'Tap again to quit' : 'Quit') : 'Leave';
+  const head = `<div class="top"><span class="chip">${S.daily ? '📅 Daily Quiz · ' + esc(prettyDay(S.daily, true)) : S.solo ? 'Solo practice' : 'Room ' + esc(S.code)}</span><button class="leave" data-act="leave">${quitLabel}</button></div>`;
   if (!g){
     const waited = Date.now() - S.joinAt > 4000;
     return head + `<div class="card center"><h2>${waited ? 'No game found' : 'Joining room ' + esc(S.code) + '…'}</h2>
       <p class="mut">${waited ? 'Nobody is hosting code <b>' + esc(S.code) + '</b> right now. Check the code, or ask the host to create the game first.' : 'Looking for the host…'}</p></div>`;
   }
   if (g.ph === 'l') return head + renderLobby(g, pl, amHost);
+  if (g.ph === 'c' && S.daily) return head + `<div class="card center"><h2>Today's Daily Quiz</h2><p class="mut">${g.q.length} hard questions · mixed topics · ${g.d}s each</p>
+      <div class="count" id="tnum">3</div><p class="mut">One attempt only — good luck, ${esc(P.profile ? P.profile.name : '')}!</p></div>`;
   if (g.ph === 'c') return head + `<div class="card center"><h2>Get ready!</h2><p class="mut">${g.q.length} questions · ${esc(LEVELS[g.lv]||'Mixed')} · ${esc(g.cat)} · ${g.d}s each</p>
       <div class="count" id="tnum">3</div><p class="mut">Faster correct answers score more points.</p></div>`;
   if (g.ph === 'q' || g.ph === 'r') return head + renderQuestion(g, pl);
@@ -762,6 +1040,7 @@ function renderHome(){
   const ok = S.mp === 'ok';
   return `<div class="logo">⚡ Trivia <span>Duel</span></div>
   <p class="sub">Same questions, same clock. The fastest right answer wins.</p>
+  ${NET === 'fb' ? dailyCard() : ''}
   <div class="card">
     <label>Your name<input id="nm" maxlength="16" autocomplete="off" placeholder="e.g. Sam" value="${esc(S.name)}"></label>
     <button class="big primary" data-act="create" ${ok&&!S.busy?'':'disabled'}>${S.mp==='loading'||S.busy?'Connecting…':'Create a game'}</button>
@@ -771,7 +1050,7 @@ function renderHome(){
     ${S.mp==='off' ? `<div class="note">Multiplayer isn't available in this view — players need to open this page while signed in to Claude. Solo practice still works.</div>` : ''}
     ${S.err ? `<div class="err">${esc(S.err)}</div>` : ''}
   </div>
-  <p class="sub" style="margin-top:16px;font-size:14px">${Q.length} questions across ${CATS.length} categories</p>`;
+  <p class="sub" style="margin-top:16px;font-size:14px">${Q.filter(q => q.lv !== 'd').length} game questions across ${CATS.length} categories${NET === 'fb' ? ` · ${Q.filter(q => q.lv === 'd').length} more kept for the Daily Quiz` : ''}</p>`;
 }
 
 function renderLobby(g, pl, amHost){
@@ -802,12 +1081,13 @@ function renderQuestion(g, pl){
   let below = '';
   if (!reveal){
     const answered = pl.filter(p => answerOf(p, g, g.qi)).length;
+    if (S.daily) below = `<p class="status">${mine ? 'Locked in!' : ''}</p>`; else
     below = `<p class="status">${mine ? 'Locked in! ' : ''}<span class="mut">${answered} of ${pl.length} answered</span></p>
       <div class="players" style="justify-content:center">${pl.map(p=>`<span class="pl ${answerOf(p,g,g.qi)?'done':''}">${avatar(p)}${esc(p.presence.name)}${answerOf(p,g,g.qi)?' <span class="tick">✓</span>':''}</span>`).join('')}</div>`;
   } else {
     const pts = points(mine, g.d);
     below = `<div class="result ${pts?'good':'bad'}">${pts ? '+' + pts + ' points!' : mine ? 'Not quite!' : "Time's up!"}</div>
-      <p class="center mut" style="margin:0">Answer: <b style="color:#fff">${esc(qd.o[0])}</b></p>${board(g, pl, true)}`;
+      <p class="center mut" style="margin:0">Answer: <b style="color:#fff">${esc(qd.o[0])}</b></p>${S.daily ? `<p class="center mut">Running total: <b style="color:#fff">${standings(g, pl)[0].s}</b></p>` : board(g, pl, true)}`;
   }
   return `<div class="top" style="margin-bottom:4px"><span class="chip">Q${g.qi+1} of ${g.q.length}</span><span class="chip">${esc(qd.c)}</span><span class="tnum" id="tnum"></span></div>
     <div class="timer"><i id="tbar"></i></div>
@@ -822,6 +1102,7 @@ function board(g, pl, showDelta){
 }
 
 function renderOver(g, pl, amHost){
+  if (S.daily) return renderDailyOver(g, pl);
   const st = standings(g, pl);
   const top = st[0], tie = st.length > 1 && st[1].s === top.s;
   let headline = 'Game over!';
@@ -851,7 +1132,7 @@ function update(){
 
 function tickVisuals(d){
   const g = d.g; if (!g) return;
-  const total = g.ph === 'q' ? g.d*1000 : g.ph === 'c' ? COUNTDOWN : g.ph === 'r' ? REVEAL : 0;
+  const total = g.ph === 'q' ? g.d*1000 : g.ph === 'c' ? COUNTDOWN : g.ph === 'r' ? revealMs() : 0;
   const left = Math.max(0, total - (Date.now() - phaseStart));
   const bar = document.getElementById('tbar');
   if (bar) bar.style.width = (g.ph === 'q' && total ? left/total*100 : 0) + '%';
@@ -867,13 +1148,15 @@ function tick(){
   const d = derive(), g = d.g, now = Date.now();
   if (S.screen === 'game' && !g && Date.now() - S.joinAt > 4000) update();
   tickVisuals(d);
+  if (S.daily && g && g.ph === 'o' && !S.dailySent) submitDaily(g);
+  if (S.quitArm && Date.now() - S.quitArm > 4000){ S.quitArm = 0; update(); }
   if (d.amHost && g){
     const el = now - phaseStart;
     if (g.ph === 'c' && el >= COUNTDOWN) setG({ph:'q', qi:0});
     else if (g.ph === 'q'){
       const all = d.pl.length > 0 && d.pl.every(p => answerOf(p, g, g.qi));
       if (el >= g.d*1000 + 400 || (all && el >= 900)) setG({ph:'r'});
-    } else if (g.ph === 'r' && el >= REVEAL){
+    } else if (g.ph === 'r' && el >= revealMs()){
       if (g.qi + 1 < g.q.length) setG({ph:'q', qi:g.qi+1}); else setG({ph:'o'});
     }
   }
@@ -987,6 +1270,11 @@ const actions = {
     setP(baseMe(name, true));
   },
   leave(){
+    if (S.daily){
+      const g = myP.g;
+      if (g && g.ph !== 'o' && Date.now() - (S.quitArm||0) > 4000){ S.quitArm = Date.now(); update(); return; }
+      S.quitArm = 0; S.daily = null; myP = {}; lastGame = null; lastKey = ''; S.solo = false; S.code = ''; S.screen = 'home'; update(); return;
+    }
     if (room) room.leave().catch(()=>{});
     if (NET === 'fb') leaveFb();
     room = null; myP = {}; lastGame = null; lastKey = ''; S.screen = 'home'; S.solo = false; S.code = ''; S.err = '';
@@ -994,7 +1282,7 @@ const actions = {
   },
   start(){
     const g = myP.g; if (!g) return;
-    let pool = Q.map((q,i)=>i); if (g.cat !== 'Mixed') pool = pool.filter(i => Q[i].c === g.cat);
+    let pool = Q.map((q,i)=>i).filter(i => Q[i].lv !== 'd'); if (g.cat !== 'Mixed') pool = pool.filter(i => Q[i].c === g.cat);
     const lv = g.lv || 'm'; if (lv !== 'm') pool = pool.filter(i => Q[i].lv === lv);
     // Avoid repeats: this device remembers which questions it has already used.
     const n = Math.min(g.n, pool.length), UKEY = 'td_used_' + Q.length;
@@ -1020,17 +1308,267 @@ const actions = {
   }
 };
 
+// ---------- Daily quiz, player profiles and leaderboards (Firebase only) ----------
+const PLAYERS = 'trivia_players', DAYS = 'trivia_daily', DAILY_SECS = 20, DAY0 = Date.UTC(2026, 10, 8);
+const P = {auth:null, uid:null, profile:null, loaded:false, today:null, todayDoc:null, google:false, busy:false, err:''};
+S.board = 'today'; S.boardData = {};
+
+function ukDay(t){ return new Intl.DateTimeFormat('en-CA', {timeZone:'Europe/London', year:'numeric', month:'2-digit', day:'2-digit'}).format(t || new Date()); }
+function dayUTC(day){ const [y,m,d] = day.split('-').map(Number); return Date.UTC(y, m-1, d); }
+function prevDay(day){ return new Date(dayUTC(day) - 864e5).toISOString().slice(0,10); }
+function prettyDay(day, short){ return new Date(dayUTC(day)).toLocaleDateString('en-GB', short ? {day:'numeric', month:'short', timeZone:'UTC'} : {weekday:'long', day:'numeric', month:'long', timeZone:'UTC'}); }
+function hashStr(s){ let h = 2166136261; for (let i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+function rng(seed){ return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function seededShuffle(a, seed){ const r = rng(seed); a = a.slice(); for (let i=a.length-1;i>0;i--){ const j = Math.floor(r()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a; }
+
+// Everyone gets the same 10 questions each UK day: one from every category plus two
+// rotating extras. Each category works through its own shuffled list, so nothing
+// repeats until that category's daily questions have all been used.
+const DAILY_POOL = CATS.map(c => Q.map((q,i) => i).filter(i => Q[i].lv === 'd' && Q[i].c === c));
+function dailyPick(k, u){ const list = DAILY_POOL[k], cyc = Math.floor(u / list.length); return seededShuffle(list, hashStr('td-daily|' + CATS[k] + '|' + cyc))[u % list.length]; }
+function dailyIds(day){
+  const di = Math.max(0, Math.round((dayUTC(day) - DAY0) / 864e5)), K = CATS.length;
+  const used = CATS.map(() => 0), extras = d => [(2*d) % K, (2*d+1) % K];
+  for (let d = 0; d < di; d++){ for (let k = 0; k < K; k++) used[k]++; for (const k of extras(d)) used[k]++; }
+  const picks = [];
+  for (let k = 0; k < K; k++) picks.push(dailyPick(k, used[k]++));
+  for (const k of extras(di)) picks.push(dailyPick(k, used[k]++));
+  return seededShuffle(picks, hashStr('td-order|' + day));
+}
+function revealMs(){ return S.daily ? 3000 : REVEAL; }
+
+function playerRef(){ return fdb.collection(PLAYERS).doc(P.uid); }
+function scoreRef(day){ return fdb.collection(DAYS).doc(day).collection('scores').doc(P.uid); }
+const TS = () => firebase.firestore.FieldValue.serverTimestamp();
+function liveStreak(pr){ if (!pr || !pr.lastDay) return 0; const t = ukDay(); return (pr.lastDay === t || pr.lastDay === prevDay(t)) ? (pr.streak || 0) : 0; }
+function fmt(n){ return Number(n || 0).toLocaleString('en-GB'); }
+function authErr(e){ return e && e.code === 'permission-denied' ? 'The game server refused access — check the Firestore rules for trivia_players and trivia_daily.' : "Couldn't reach the game server — check your connection."; }
+
+function initAuth(){
+  if (!firebase.auth) return;
+  P.auth = firebase.auth();
+  P.auth.getRedirectResult().catch(handleLinkError);
+  P.auth.onAuthStateChanged(async u => {
+    if (!u){ P.uid = null; P.auth.signInAnonymously().catch(e => { P.err = authErr(e); P.loaded = true; update(); }); return; }
+    P.uid = u.uid; P.google = (u.providerData || []).some(p => p && p.providerId === 'google.com');
+    await loadProfile();
+  });
+}
+async function loadProfile(){
+  try{
+    const s = await playerRef().get();
+    P.profile = s.exists ? s.data() : null;
+    if (P.profile && P.profile.name){ S.name = P.profile.name; save('td_name', P.profile.name); }
+    P.today = ukDay();
+    const t = await scoreRef(P.today).get();
+    P.todayDoc = t.exists ? t.data() : null;
+    P.err = '';
+  }catch(e){ P.err = authErr(e); }
+  P.loaded = true; update();
+}
+
+function dailyCard(){
+  const day = ukDay(), pr = P.profile, td = P.today === day ? P.todayDoc : null;
+  let status, btn;
+  if (!P.loaded) { status = 'Connecting…'; btn = `<button class="big primary" disabled>Daily Quiz</button>`; }
+  else if (td && td.done){ status = `Done today: <b>${fmt(td.score)}</b> points · ${td.correct}/10 correct`; btn = `<button class="big primary" data-act="boards">See today's leaderboard</button>`; }
+  else if (td){ status = "You started today's quiz but didn't finish, so it scored 0. Back tomorrow!"; btn = `<button class="big primary" data-act="boards">See today's leaderboard</button>`; }
+  else { status = '10 hard questions, mixed topics. One attempt a day.'; btn = `<button class="big primary" data-act="daily" ${P.busy?'disabled':''}>Play today's quiz</button>`; }
+  const streak = liveStreak(pr);
+  return `<div class="card daily">
+    <div class="dhead"><span class="dtitle">📅 Daily Quiz</span><span class="mut">${esc(prettyDay(day))}</span></div>
+    <p class="dstat">${status}</p>
+    ${btn}
+    <div class="drow"><button class="link" data-act="profile">${pr ? `👤 ${esc(pr.name)}${streak ? ` · 🔥 ${streak}` : ''} · edit` : '👤 Create your player'}</button>
+    ${td ? '' : `<button class="link" data-act="boards">🏆 Leaderboards</button>`}</div>
+    ${P.err ? `<div class="err">${esc(P.err)}</div>` : ''}
+  </div>`;
+}
+
+function renderProfile(){
+  const pr = P.profile;
+  const back = `<div class="top"><span class="chip">${pr ? 'Your player' : 'Create your player'}</span><button class="leave" data-act="home">Back</button></div>`;
+  const google = P.google
+    ? `<p class="note">✓ Saved to Google. Your player, scores and streak follow you to any device where you sign in.</p><button class="big ghost" data-act="signout">Sign out</button>`
+    : `<p class="note">${pr ? 'Your player is saved on this device. Save it to Google to keep it if you change device or clear your browser.' : 'Played on another device and saved to Google? Sign in to carry on.'}</p>
+       <button class="big ghost" data-act="google" ${P.busy?'disabled':''}>${pr ? 'Save to Google' : 'Sign in with Google'}</button>`;
+  if (!pr) return back + `<div class="card">
+    <h2>Create your player</h2>
+    <p class="mut" style="margin-top:0">Your name appears on the daily, all-time and streak leaderboards. This device will remember you.</p>
+    <label>Player name<input id="pnm" maxlength="16" autocomplete="off" placeholder="e.g. Brooky" value="${esc(S.pname ?? S.name ?? '')}"></label>
+    <button class="big primary" data-act="saveName" ${P.busy||!P.uid?'disabled':''}>Create player</button>
+    <div class="or">or</div>${google}
+    ${S.err ? `<div class="err">${esc(S.err)}</div>` : ''}</div>`;
+  const streak = liveStreak(pr);
+  return back + `<div class="card">
+    <h2>${esc(pr.name)}</h2>
+    <div class="stats">
+      <div><b>${fmt(pr.total)}</b><span>total points</span></div>
+      <div><b>${pr.days || 0}</b><span>days played</span></div>
+      <div><b>🔥 ${streak}</b><span>current streak</span></div>
+      <div><b>${pr.best || 0}</b><span>best streak</span></div>
+    </div>
+    <label>Change name<input id="pnm" maxlength="16" autocomplete="off" value="${esc(S.pname ?? pr.name)}"></label>
+    <button class="big primary" data-act="saveName" ${P.busy?'disabled':''}>Save name</button>
+    <div style="margin-top:16px">${google}</div>
+    ${S.err ? `<div class="err">${esc(S.err)}</div>` : ''}</div>`;
+}
+
+function renderDailyIntro(){
+  return `<div class="top"><span class="chip">📅 Daily Quiz</span><button class="leave" data-act="home">Back</button></div>
+  <div class="card center"><h2>${esc(prettyDay(ukDay()))}</h2>
+    <p class="mut">10 hard questions from every topic · 20 seconds each · faster correct answers score more.</p>
+    <p><b>You only get one attempt.</b> Quitting part-way through still uses it up.</p>
+    <button class="big primary" data-act="startDaily" ${P.busy?'disabled':''}>${P.busy ? 'Getting ready…' : "I'm ready — start"}</button>
+    ${S.err ? `<div class="err">${esc(S.err)}</div>` : ''}</div>`;
+}
+
+function renderDailyOver(g, pl){
+  const r = S.dailyResult || {}, me = standings(g, pl)[0] || {s:0, c:0};
+  return `<div class="card center"><div class="win">${fmt(me.s)} points</div>
+    <p class="mut" style="margin:0">${me.c} out of ${g.q.length} correct</p>
+    <div class="stats" style="margin:18px 0">
+      <div><b>🔥 ${r.streak || '–'}</b><span>day streak</span></div>
+      <div><b>${r.rank ? '#' + r.rank : r.saving ? '…' : '–'}</b><span>today's rank</span></div>
+    </div>
+    ${r.saving ? '<p class="mut">Saving your score…</p>' : r.error ? `<p class="err">${esc(r.error)}</p>` : '<p class="mut">Saved. Come back tomorrow for a new quiz!</p>'}
+    <div class="btns"><button class="big primary" data-act="boards">Leaderboards</button><button class="big ghost" data-act="leave">Home</button></div></div>`;
+}
+
+async function submitDaily(g){
+  S.dailySent = true;
+  const me = standings(g, players(peers()))[0] || {s:0, c:0};
+  const day = S.daily, pr = P.profile || {};
+  const streak = pr.lastDay === day ? (pr.streak || 1) : pr.lastDay === prevDay(day) ? (pr.streak || 0) + 1 : 1;
+  const np = {name: pr.name, total: (pr.total || 0) + me.s, days: (pr.days || 0) + 1, correct: (pr.correct || 0) + me.c,
+              streak, best: Math.max(pr.best || 0, streak), lastDay: day, lastScore: me.s, updated: TS()};
+  S.dailyResult = {streak, saving: true}; update();
+  try{
+    const b = fdb.batch();
+    b.update(scoreRef(day), {score: me.s, correct: me.c, done: true, streak});
+    b.set(playerRef(), np, {merge: true});
+    await b.commit();
+    P.profile = {...pr, ...np}; P.todayDoc = {...(P.todayDoc || {}), score: me.s, correct: me.c, done: true};
+    S.dailyResult.saving = false; update();
+    await loadBoard('today');
+    const rows = S.boardData.today;
+    if (Array.isArray(rows)){ const i = rows.findIndex(x => x.id === P.uid); if (i >= 0) S.dailyResult.rank = i + 1; }
+  }catch(e){ S.dailyResult.saving = false; S.dailyResult.error = authErr(e); }
+  update();
+}
+
+async function loadBoard(kind){
+  S.boardData[kind] = 'loading'; update();
+  try{
+    let rows;
+    if (kind === 'today'){
+      const s = await fdb.collection(DAYS).doc(ukDay()).collection('scores').orderBy('score', 'desc').limit(60).get();
+      rows = s.docs.map(d => ({id: d.id, ...d.data()})).filter(r => r.done).map(r => ({id: r.id, name: r.name, v: fmt(r.score), sub: `${r.correct}/10`}));
+    } else if (kind === 'total'){
+      const s = await fdb.collection(PLAYERS).orderBy('total', 'desc').limit(50).get();
+      rows = s.docs.map(d => ({id: d.id, ...d.data()})).filter(r => r.days).map(r => ({id: r.id, name: r.name, v: fmt(r.total), sub: `${r.days} day${r.days === 1 ? '' : 's'}`}));
+    } else {
+      const s = await fdb.collection(PLAYERS).orderBy('streak', 'desc').limit(120).get();
+      rows = s.docs.map(d => ({id: d.id, ...d.data()})).map(r => ({...r, live: liveStreak(r)})).filter(r => r.live > 0)
+        .sort((a, b) => b.live - a.live || (b.best || 0) - (a.best || 0)).map(r => ({id: r.id, name: r.name, v: '🔥 ' + r.live, sub: `best ${r.best || r.live}`}));
+    }
+    S.boardData[kind] = rows.slice(0, 50);
+  }catch(e){ S.boardData[kind] = {error: authErr(e)}; }
+  update();
+}
+
+function renderBoards(){
+  const k = S.board, rows = S.boardData[k], medals = ['🥇','🥈','🥉'];
+  const tab = (id, label) => `<button class="tab ${k === id ? 'on' : ''}" data-act="tab" data-k="${id}">${label}</button>`;
+  let body;
+  if (rows === undefined || rows === 'loading') body = '<p class="mut center">Loading…</p>';
+  else if (rows.error) body = `<p class="err">${esc(rows.error)}</p>`;
+  else if (!rows.length) body = `<p class="mut center">${k === 'today' ? 'Nobody has played today yet. Be the first!' : k === 'streak' ? 'No live streaks yet.' : 'No scores yet.'}</p>`;
+  else body = `<div class="board">${rows.map((r, i) => `<div class="br ${r.id === P.uid ? 'me' : ''}"><span class="rk">${i < 3 ? medals[i] : i + 1}</span><span class="nm">${esc(r.name || 'Player')}${r.id === P.uid ? '<span class="you">you</span>' : ''}</span><span class="dl mut" style="width:auto">${esc(r.sub)}</span><span class="sc" style="width:auto;min-width:64px">${esc(r.v)}</span></div>`).join('')}</div>`;
+  const note = k === 'today' ? `Scores for ${esc(prettyDay(ukDay()))}` : k === 'total' ? 'All daily quiz points added up' : 'Days in a row playing the daily quiz';
+  return `<div class="top"><span class="chip">🏆 Leaderboards</span><button class="leave" data-act="home">Back</button></div>
+  <div class="card"><div class="tabs">${tab('today', 'Today')}${tab('total', 'All-time')}${tab('streak', 'Streaks')}</div>
+    <p class="mut center" style="margin:6px 0 0;font-size:14px">${note}</p>${body}
+    <button class="big ghost" data-act="refreshBoard" style="margin-top:14px">Refresh</button></div>`;
+}
+
+function handleLinkError(e){
+  if (!e) return;
+  if ((e.code === 'auth/credential-already-in-use' || e.code === 'auth/email-already-in-use') && e.credential){
+    // This Google account already has a player: switch to it.
+    return P.auth.signInWithCredential(e.credential).catch(x => { S.err = 'Google sign-in failed (' + (x.code || x.message) + ')'; update(); });
+  }
+  if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') return;
+  S.err = 'Google sign-in failed (' + (e.code || e.message) + ')'; update();
+}
+
+Object.assign(actions, {
+  home(){ S.screen = 'home'; S.err = ''; S.pname = undefined; update(); },
+  profile(){ S.screen = 'profile'; S.err = ''; S.pname = undefined; update(); },
+  daily(){ S.err = ''; S.after = 'daily'; S.screen = P.profile ? 'daily' : 'profile'; update(); },
+  boards(){ S.screen = 'boards'; S.err = ''; loadBoard(S.board); },
+  tab(el){ S.board = el.dataset.k; loadBoard(S.board); },
+  refreshBoard(){ loadBoard(S.board); },
+  async saveName(){
+    const name = (S.pname ?? (P.profile && P.profile.name) ?? '').trim();
+    if (name.length < 2){ S.err = 'Names need at least 2 characters.'; update(); return; }
+    if (!P.uid || P.busy) return;
+    P.busy = true; S.err = ''; update();
+    try{
+      if (P.profile){ await playerRef().update({name}); P.profile = {...P.profile, name}; }
+      else {
+        const pr = {name, total: 0, days: 0, correct: 0, streak: 0, best: 0, lastDay: '', created: TS()};
+        await playerRef().set(pr); P.profile = pr;
+      }
+      S.name = name; save('td_name', name); S.pname = undefined;
+      S.screen = S.after === 'daily' ? 'daily' : 'home'; S.after = null;
+    }catch(e){ S.err = authErr(e); }
+    P.busy = false; update();
+  },
+  async google(){
+    const u = P.auth && P.auth.currentUser; if (!u) return;
+    const prov = new firebase.auth.GoogleAuthProvider();
+    P.busy = true; S.err = ''; update();
+    try{ await u.linkWithPopup(prov); P.google = true; }
+    catch(e){
+      if (['auth/popup-blocked', 'auth/operation-not-supported-in-this-environment', 'auth/web-storage-unsupported'].includes(e.code)){
+        try{ await u.linkWithRedirect(prov); }catch(x){ handleLinkError(x); }
+      } else await handleLinkError(e);
+    }
+    P.busy = false; update();
+  },
+  async signout(){ P.profile = null; P.todayDoc = null; P.loaded = false; S.screen = 'home'; update(); await P.auth.signOut(); },
+  async startDaily(){
+    if (!P.profile || P.busy) return;
+    const day = ukDay(), ref = scoreRef(day);
+    P.busy = true; S.err = ''; update();
+    try{
+      const s = await ref.get();
+      if (s.exists){ P.today = day; P.todayDoc = s.data(); P.busy = false; S.screen = 'home'; update(); return; }
+      await ref.set({name: P.profile.name, score: 0, correct: 0, done: false, at: TS()});
+    }catch(e){ P.busy = false; S.err = authErr(e); update(); return; }
+    P.today = day; P.todayDoc = {name: P.profile.name, score: 0, correct: 0, done: false}; P.busy = false;
+    room = null; myP = {}; lastGame = null; lastKey = ''; S.solo = true; S.daily = day; S.code = 'DAILY';
+    S.dailySent = false; S.dailyResult = null; S.quitArm = 0; S.screen = 'game'; S.joinAt = Date.now();
+    const e = Date.now(), ids = dailyIds(day);
+    setP({name: P.profile.name, col: COLORS[0], host: true, hs: Date.now(),
+          g: {e, ph: 'c', qi: 0, q: ids, d: DAILY_SECS, n: ids.length, cat: 'Mixed topics', lv: 'h'}, ans: {e, a: {}}});
+  }
+});
+
 app.addEventListener('click', e => {
   const el = e.target.closest('[data-act]'); if (!el || el.disabled) return;
   const f = actions[el.dataset.act]; if (f) f(el);
 });
 app.addEventListener('input', e => {
   if (e.target.id === 'nm') S.name = e.target.value;
+  if (e.target.id === 'pnm') S.pname = e.target.value;
   if (e.target.id === 'cd'){ e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g,''); S.code = e.target.value; }
 });
 app.addEventListener('keydown', e => {
   if (e.key !== 'Enter') return;
   if (e.target.id === 'cd') actions.join();
+  if (e.target.id === 'pnm') actions.saveName();
   if (e.target.id === 'nm' && S.mp === 'ok') actions.create();
 });
 app.addEventListener('change', e => {
@@ -1043,7 +1581,7 @@ app.addEventListener('change', e => {
 update();
 (async () => {
   if (window.firebase){
-    try{ firebase.initializeApp(FIREBASE_CONFIG); fdb = firebase.firestore(); NET = 'fb'; S.mp = 'ok'; update(); return; }
+    try{ firebase.initializeApp(FIREBASE_CONFIG); fdb = firebase.firestore(); NET = 'fb'; S.mp = 'ok'; initAuth(); update(); return; }
     catch(e){ fdb = null; }
   }
   NET = 'room';
