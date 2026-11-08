@@ -6,7 +6,8 @@ A quick-fire multiple-choice trivia game with a British flavour. Same questions,
 - 10 hard questions every day, always one from each category plus two extras
 - Everyone gets the same questions on the same (UK) day; one attempt only
 - Players create a name once; the device remembers them, and they can save to Google to carry their player to other devices
-- Leaderboards: Today, All-time (total points) and Streaks (days in a row)
+- Leaderboards: Today, Week (Sunday–Saturday), All-time (total points) and Streaks (days in a row)
+- The weekly winner is announced on the home screen every Sunday
 - 240 questions kept only for the Daily Quiz; no repeats for 24 days
 
 ## Games

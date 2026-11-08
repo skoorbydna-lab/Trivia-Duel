@@ -89,6 +89,10 @@ h2{margin:0 0 10px;font-size:22px}
 .tabs{display:flex;gap:6px;background:rgba(0,0,0,.25);padding:5px;border-radius:14px}
 .tab{flex:1;background:transparent;color:#fff;padding:10px 6px;font-size:16px;border-radius:10px}
 .tab.on{background:var(--acc);color:#1a0f3a}
+.winner{background:linear-gradient(135deg,#ffd23f,#ff9f43);color:#1a0f3a;border-radius:18px;padding:14px 16px;margin-bottom:14px;text-align:center;font-size:18px;line-height:1.35;cursor:pointer;box-shadow:0 6px 0 rgba(0,0,0,.2)}
+.winner span{font-size:14px}
+.winner.small{font-size:15px;padding:10px 12px;margin:12px 0 4px;box-shadow:none;cursor:default}
+.tab{font-size:15px}
 @media (max-width:420px){.qtext{font-size:22px}.opt{font-size:17px;min-height:78px}.logo{font-size:38px}.code{font-size:46px}.settings{grid-template-columns:1fr}}
 </style>
 </head>
@@ -1337,6 +1341,28 @@ function dailyIds(day){
 }
 function revealMs(){ return S.daily ? 3000 : REVEAL; }
 
+// Weekly leaderboard: daily points added up Sunday–Saturday (UK). The winner of the
+// week just finished is announced on the home screen every Sunday.
+function addDays(day, n){ return new Date(dayUTC(day) + n*864e5).toISOString().slice(0,10); }
+function weekStart(day){ return addDays(day, -new Date(dayUTC(day)).getUTCDay()); }
+function weekLabel(ws){ return `${prettyDay(ws, true)} – ${prettyDay(addDays(ws, 6), true)}`; }
+const weekCache = {};
+async function loadWeek(ws){
+  const today = ukDay(), days = [...Array(7)].map((_, i) => addDays(ws, i)).filter(d => d <= today);
+  const snaps = await Promise.all(days.map(d => fdb.collection(DAYS).doc(d).collection('scores').orderBy('score', 'desc').limit(300).get()));
+  const tot = {};
+  snaps.forEach(s => s.docs.forEach(doc => {
+    const r = doc.data(); if (!r.done) return;
+    const t = tot[doc.id] || (tot[doc.id] = {id: doc.id, name: r.name, total: 0, days: 0});
+    t.total += r.score || 0; t.days++; if (r.name) t.name = r.name;
+  }));
+  return weekCache[ws] = Object.values(tot).sort((a, b) => b.total - a.total || b.days - a.days);
+}
+function winners(rows){ return rows && rows.length && rows[0].total > 0 ? rows.filter(r => r.total === rows[0].total) : []; }
+function winnerNames(w){ return w.map(r => esc(r.name || 'Player')).join(' & '); }
+function lastWeekStart(){ return addDays(weekStart(ukDay()), -7); }
+function loadLastWeek(){ const ws = lastWeekStart(); if (weekCache[ws]) return; weekCache[ws] = []; loadWeek(ws).then(update).catch(() => { delete weekCache[ws]; }); }
+
 function playerRef(){ return fdb.collection(PLAYERS).doc(P.uid); }
 function scoreRef(day){ return fdb.collection(DAYS).doc(day).collection('scores').doc(P.uid); }
 const TS = () => firebase.firestore.FieldValue.serverTimestamp();
@@ -1365,6 +1391,7 @@ async function loadProfile(){
     P.err = '';
   }catch(e){ P.err = authErr(e); }
   P.loaded = true; update();
+  if (new Date(dayUTC(ukDay())).getUTCDay() === 0) loadLastWeek();
 }
 
 function dailyCard(){
@@ -1375,7 +1402,12 @@ function dailyCard(){
   else if (td){ status = "You started today's quiz but didn't finish, so it scored 0. Back tomorrow!"; btn = `<button class="big primary" data-act="boards">See today's leaderboard</button>`; }
   else { status = '10 hard questions, mixed topics. One attempt a day.'; btn = `<button class="big primary" data-act="daily" ${P.busy?'disabled':''}>Play today's quiz</button>`; }
   const streak = liveStreak(pr);
-  return `<div class="card daily">
+  let banner = '';
+  if (new Date(dayUTC(day)).getUTCDay() === 0){
+    const w = winners(weekCache[lastWeekStart()]);
+    if (w.length) banner = `<div class="winner" data-act="weekBoard">🏆 <b>${w.length > 1 ? 'Joint weekly winners' : 'Weekly winner'}: ${winnerNames(w)}</b><br><span>${fmt(w[0].total)} points · week of ${esc(weekLabel(lastWeekStart()))}</span></div>`;
+  }
+  return `${banner}<div class="card daily">
     <div class="dhead"><span class="dtitle">📅 Daily Quiz</span><span class="mut">${esc(prettyDay(day))}</span></div>
     <p class="dstat">${status}</p>
     ${btn}
@@ -1461,7 +1493,10 @@ async function loadBoard(kind){
   S.boardData[kind] = 'loading'; update();
   try{
     let rows;
-    if (kind === 'today'){
+    if (kind === 'week'){
+      const [cur] = await Promise.all([loadWeek(weekStart(ukDay())), weekCache[lastWeekStart()] && weekCache[lastWeekStart()].length ? null : loadWeek(lastWeekStart())]);
+      rows = cur.map(r => ({id: r.id, name: r.name, v: fmt(r.total), sub: `${r.days} day${r.days === 1 ? '' : 's'}`}));
+    } else if (kind === 'today'){
       const s = await fdb.collection(DAYS).doc(ukDay()).collection('scores').orderBy('score', 'desc').limit(60).get();
       rows = s.docs.map(d => ({id: d.id, ...d.data()})).filter(r => r.done).map(r => ({id: r.id, name: r.name, v: fmt(r.score), sub: `${r.correct}/10`}));
     } else if (kind === 'total'){
@@ -1483,12 +1518,14 @@ function renderBoards(){
   let body;
   if (rows === undefined || rows === 'loading') body = '<p class="mut center">Loading…</p>';
   else if (rows.error) body = `<p class="err">${esc(rows.error)}</p>`;
-  else if (!rows.length) body = `<p class="mut center">${k === 'today' ? 'Nobody has played today yet. Be the first!' : k === 'streak' ? 'No live streaks yet.' : 'No scores yet.'}</p>`;
+  else if (!rows.length) body = `<p class="mut center">${k === 'week' ? 'No scores this week yet.' : k === 'today' ? 'Nobody has played today yet. Be the first!' : k === 'streak' ? 'No live streaks yet.' : 'No scores yet.'}</p>`;
   else body = `<div class="board">${rows.map((r, i) => `<div class="br ${r.id === P.uid ? 'me' : ''}"><span class="rk">${i < 3 ? medals[i] : i + 1}</span><span class="nm">${esc(r.name || 'Player')}${r.id === P.uid ? '<span class="you">you</span>' : ''}</span><span class="dl mut" style="width:auto">${esc(r.sub)}</span><span class="sc" style="width:auto;min-width:64px">${esc(r.v)}</span></div>`).join('')}</div>`;
-  const note = k === 'today' ? `Scores for ${esc(prettyDay(ukDay()))}` : k === 'total' ? 'All daily quiz points added up' : 'Days in a row playing the daily quiz';
+  const lw = winners(weekCache[lastWeekStart()]);
+  const lastWin = k === 'week' && lw.length ? `<div class="winner small">🏆 Last week (${esc(weekLabel(lastWeekStart()))}): <b>${winnerNames(lw)}</b> · ${fmt(lw[0].total)} pts</div>` : '';
+  const note = k === 'week' ? `This week: ${esc(weekLabel(weekStart(ukDay())))} · winner announced Sunday morning` : k === 'today' ? `Scores for ${esc(prettyDay(ukDay()))}` : k === 'total' ? 'All daily quiz points added up' : 'Days in a row playing the daily quiz';
   return `<div class="top"><span class="chip">🏆 Leaderboards</span><button class="leave" data-act="home">Back</button></div>
-  <div class="card"><div class="tabs">${tab('today', 'Today')}${tab('total', 'All-time')}${tab('streak', 'Streaks')}</div>
-    <p class="mut center" style="margin:6px 0 0;font-size:14px">${note}</p>${body}
+  <div class="card"><div class="tabs">${tab('today', 'Today')}${tab('week', 'Week')}${tab('total', 'All-time')}${tab('streak', 'Streaks')}</div>
+    <p class="mut center" style="margin:6px 0 0;font-size:14px">${note}</p>${lastWin}${body}
     <button class="big ghost" data-act="refreshBoard" style="margin-top:14px">Refresh</button></div>`;
 }
 
@@ -1509,6 +1546,7 @@ Object.assign(actions, {
   boards(){ S.screen = 'boards'; S.err = ''; loadBoard(S.board); },
   tab(el){ S.board = el.dataset.k; loadBoard(S.board); },
   refreshBoard(){ loadBoard(S.board); },
+  weekBoard(){ S.screen = 'boards'; S.board = 'week'; S.err = ''; loadBoard('week'); },
   async saveName(){
     const name = (S.pname ?? (P.profile && P.profile.name) ?? '').trim();
     if (name.length < 2){ S.err = 'Names need at least 2 characters.'; update(); return; }
