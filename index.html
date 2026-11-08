@@ -1346,7 +1346,14 @@ function revealMs(){ return S.daily ? 3000 : REVEAL; }
 function addDays(day, n){ return new Date(dayUTC(day) + n*864e5).toISOString().slice(0,10); }
 function weekStart(day){ return addDays(day, -new Date(dayUTC(day)).getUTCDay()); }
 function weekLabel(ws){ return `${prettyDay(ws, true)} – ${prettyDay(addDays(ws, 6), true)}`; }
-const weekCache = {};
+const weekCache = {}, nameCache = {};
+// Scores keep the name used on the day; boards show each player's current name instead.
+async function freshNames(ids){
+  const need = [...new Set(ids)].filter(id => !(id in nameCache));
+  await Promise.all(need.map(id => fdb.collection(PLAYERS).doc(id).get()
+    .then(s => { nameCache[id] = s.exists ? s.data().name : null; }).catch(() => { nameCache[id] = null; })));
+}
+function useCurrentNames(rows){ rows.forEach(r => { if (nameCache[r.id]) r.name = nameCache[r.id]; }); return rows; }
 async function loadWeek(ws){
   const today = ukDay(), days = [...Array(7)].map((_, i) => addDays(ws, i)).filter(d => d <= today);
   const snaps = await Promise.all(days.map(d => fdb.collection(DAYS).doc(d).collection('scores').orderBy('score', 'desc').limit(300).get()));
@@ -1356,7 +1363,9 @@ async function loadWeek(ws){
     const t = tot[doc.id] || (tot[doc.id] = {id: doc.id, name: r.name, total: 0, days: 0});
     t.total += r.score || 0; t.days++; if (r.name) t.name = r.name;
   }));
-  return weekCache[ws] = Object.values(tot).sort((a, b) => b.total - a.total || b.days - a.days);
+  const rows = Object.values(tot).sort((a, b) => b.total - a.total || b.days - a.days);
+  await freshNames(rows.map(r => r.id));
+  return weekCache[ws] = useCurrentNames(rows);
 }
 function winners(rows){ return rows && rows.length && rows[0].total > 0 ? rows.filter(r => r.total === rows[0].total) : []; }
 function winnerNames(w){ return w.map(r => esc(r.name || 'Player')).join(' & '); }
@@ -1440,6 +1449,7 @@ function renderProfile(){
       <div><b>🔥 ${streak}</b><span>current streak</span></div>
       <div><b>${pr.best || 0}</b><span>best streak</span></div>
     </div>
+    <p class="mut" style="margin:0 0 8px;font-size:14px">Changing your name keeps all your points, streaks and leaderboard places.</p>
     <label>Change name<input id="pnm" maxlength="16" autocomplete="off" value="${esc(S.pname ?? pr.name)}"></label>
     <button class="big primary" data-act="saveName" ${P.busy?'disabled':''}>Save name</button>
     <div style="margin-top:16px">${google}</div>
@@ -1499,6 +1509,7 @@ async function loadBoard(kind){
     } else if (kind === 'today'){
       const s = await fdb.collection(DAYS).doc(ukDay()).collection('scores').orderBy('score', 'desc').limit(60).get();
       rows = s.docs.map(d => ({id: d.id, ...d.data()})).filter(r => r.done).map(r => ({id: r.id, name: r.name, v: fmt(r.score), sub: `${r.correct}/10`}));
+      await freshNames(rows.map(r => r.id)); useCurrentNames(rows);
     } else if (kind === 'total'){
       const s = await fdb.collection(PLAYERS).orderBy('total', 'desc').limit(50).get();
       rows = s.docs.map(d => ({id: d.id, ...d.data()})).filter(r => r.days).map(r => ({id: r.id, name: r.name, v: fmt(r.total), sub: `${r.days} day${r.days === 1 ? '' : 's'}`}));
@@ -1508,6 +1519,7 @@ async function loadBoard(kind){
         .sort((a, b) => b.live - a.live || (b.best || 0) - (a.best || 0)).map(r => ({id: r.id, name: r.name, v: '🔥 ' + r.live, sub: `best ${r.best || r.live}`}));
     }
     S.boardData[kind] = rows.slice(0, 50);
+    if (kind === 'total' || kind === 'streak') rows.forEach(r => { if (r.name) nameCache[r.id] = r.name; });
   }catch(e){ S.boardData[kind] = {error: authErr(e)}; }
   update();
 }
@@ -1541,14 +1553,15 @@ function handleLinkError(e){
 
 Object.assign(actions, {
   home(){ S.screen = 'home'; S.err = ''; S.pname = undefined; update(); },
-  profile(){ S.screen = 'profile'; S.err = ''; S.pname = undefined; update(); },
-  daily(){ S.err = ''; S.after = 'daily'; S.screen = P.profile ? 'daily' : 'profile'; update(); },
+  profile(){ S.screen = 'profile'; S.err = ''; S.pname = undefined; S.after = null; update(); },
+  daily(){ S.err = ''; S.after = P.profile ? null : 'daily'; S.screen = P.profile ? 'daily' : 'profile'; update(); },
   boards(){ S.screen = 'boards'; S.err = ''; loadBoard(S.board); },
   tab(el){ S.board = el.dataset.k; loadBoard(S.board); },
   refreshBoard(){ loadBoard(S.board); },
   weekBoard(){ S.screen = 'boards'; S.board = 'week'; S.err = ''; loadBoard('week'); },
   async saveName(){
-    const name = (S.pname ?? (P.profile && P.profile.name) ?? '').trim();
+    const box = document.getElementById('pnm');
+    const name = (box ? box.value : (S.pname ?? (P.profile && P.profile.name) ?? '')).trim();
     if (name.length < 2){ S.err = 'Names need at least 2 characters.'; update(); return; }
     if (!P.uid || P.busy) return;
     P.busy = true; S.err = ''; update();
@@ -1558,7 +1571,8 @@ Object.assign(actions, {
         const pr = {name, total: 0, days: 0, correct: 0, streak: 0, best: 0, lastDay: '', created: TS()};
         await playerRef().set(pr); P.profile = pr;
       }
-      S.name = name; save('td_name', name); S.pname = undefined;
+      S.name = name; save('td_name', name); S.pname = undefined; nameCache[P.uid] = name;
+      for (const ws in weekCache) useCurrentNames(weekCache[ws]);
       S.screen = S.after === 'daily' ? 'daily' : 'home'; S.after = null;
     }catch(e){ S.err = authErr(e); }
     P.busy = false; update();
