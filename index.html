@@ -1358,15 +1358,34 @@ async function loadWeek(ws){
   const today = ukDay(), days = [...Array(7)].map((_, i) => addDays(ws, i)).filter(d => d <= today);
   const snaps = await Promise.all(days.map(d => fdb.collection(DAYS).doc(d).collection('scores').orderBy('score', 'desc').limit(300).get()));
   const tot = {};
-  snaps.forEach(s => s.docs.forEach(doc => {
+  snaps.forEach((s, di) => s.docs.forEach(doc => {
     const r = doc.data(); if (!r.done) return;
-    const t = tot[doc.id] || (tot[doc.id] = {id: doc.id, name: r.name, total: 0, days: 0});
-    t.total += r.score || 0; t.days++; if (r.name) t.name = r.name;
+    const t = tot[doc.id] || (tot[doc.id] = {id: doc.id, name: r.name, per: {}});
+    t.per[days[di]] = r.score || 0; if (r.name) t.name = r.name;
   }));
-  const rows = Object.values(tot).sort((a, b) => b.total - a.total || b.days - a.days);
-  await freshNames(rows.map(r => r.id));
-  return weekCache[ws] = useCurrentNames(rows);
+  const players = Object.values(tot); await freshNames(players.map(r => r.id)); useCurrentNames(players);
+  const rows = groupByName(players, (t, r) => { for (const d in r.per) t.per[d] = Math.max(t.per[d] || 0, r.per[d]); })
+    .map(t => ({...t, total: Object.values(t.per).reduce((a, b) => a + b, 0), days: Object.keys(t.per).length}))
+    .sort((a, b) => b.total - a.total || b.days - a.days);
+  return weekCache[ws] = rows;
 }
+// Players with the same name (usually one person on two devices or browsers) are shown as one.
+const nameKey = n => String(n || '').trim().toLowerCase().replace(/\s+/g, ' ');
+function groupByName(rows, merge){
+  const g = new Map();
+  for (const r of rows){
+    const k = nameKey(r.name) || r.id;
+    if (!g.has(k)) g.set(k, {...r, ids: [r.id]});
+    else { const t = g.get(k); t.ids.push(r.id); merge(t, r); }
+  }
+  return [...g.values()];
+}
+async function nameTaken(name){
+  const c = fdb.collection(PLAYERS);
+  const [a, b] = await Promise.all([c.where('nameKey', '==', nameKey(name)).limit(3).get(), c.where('name', '==', name).limit(3).get()]);
+  return [...a.docs, ...b.docs].some(d => d.id !== P.uid);
+}
+const isMine = r => r.ids ? r.ids.includes(P.uid) : r.id === P.uid;
 function winners(rows){ return rows && rows.length && rows[0].total > 0 ? rows.filter(r => r.total === rows[0].total) : []; }
 function winnerNames(w){ return w.map(r => esc(r.name || 'Player')).join(' & '); }
 function lastWeekStart(){ return addDays(weekStart(ukDay()), -7); }
@@ -1393,7 +1412,8 @@ async function loadProfile(){
   try{
     const s = await playerRef().get();
     P.profile = s.exists ? s.data() : null;
-    if (P.profile && P.profile.name){ S.name = P.profile.name; save('td_name', P.profile.name); }
+    if (P.profile && P.profile.name){ S.name = P.profile.name; save('td_name', P.profile.name);
+      if (P.profile.nameKey !== nameKey(P.profile.name)) playerRef().update({nameKey: nameKey(P.profile.name)}).catch(() => {}); }
     P.today = ukDay();
     const t = await scoreRef(P.today).get();
     P.todayDoc = t.exists ? t.data() : null;
@@ -1494,7 +1514,7 @@ async function submitDaily(g){
     S.dailyResult.saving = false; update();
     await loadBoard('today');
     const rows = S.boardData.today;
-    if (Array.isArray(rows)){ const i = rows.findIndex(x => x.id === P.uid); if (i >= 0) S.dailyResult.rank = i + 1; }
+    if (Array.isArray(rows)){ const i = rows.findIndex(isMine); if (i >= 0) S.dailyResult.rank = i + 1; }
   }catch(e){ S.dailyResult.saving = false; S.dailyResult.error = authErr(e); }
   update();
 }
@@ -1505,18 +1525,22 @@ async function loadBoard(kind){
     let rows;
     if (kind === 'week'){
       const [cur] = await Promise.all([loadWeek(weekStart(ukDay())), weekCache[lastWeekStart()] && weekCache[lastWeekStart()].length ? null : loadWeek(lastWeekStart())]);
-      rows = cur.map(r => ({id: r.id, name: r.name, v: fmt(r.total), sub: `${r.days} day${r.days === 1 ? '' : 's'}`}));
+      rows = cur.map(r => ({id: r.id, ids: r.ids, name: r.name, v: fmt(r.total), sub: `${r.days} day${r.days === 1 ? '' : 's'}`}));
     } else if (kind === 'today'){
       const s = await fdb.collection(DAYS).doc(ukDay()).collection('scores').orderBy('score', 'desc').limit(60).get();
-      rows = s.docs.map(d => ({id: d.id, ...d.data()})).filter(r => r.done).map(r => ({id: r.id, name: r.name, v: fmt(r.score), sub: `${r.correct}/10`}));
-      await freshNames(rows.map(r => r.id)); useCurrentNames(rows);
+      let raw = s.docs.map(d => ({id: d.id, ...d.data()})).filter(r => r.done);
+      await freshNames(raw.map(r => r.id)); useCurrentNames(raw);
+      raw = groupByName(raw, (t, r) => { if ((r.score || 0) > (t.score || 0)){ t.score = r.score; t.correct = r.correct; } });
+      rows = raw.sort((a, b) => b.score - a.score).map(r => ({id: r.id, ids: r.ids, name: r.name, v: fmt(r.score), sub: `${r.correct}/10`}));
     } else if (kind === 'total'){
-      const s = await fdb.collection(PLAYERS).orderBy('total', 'desc').limit(50).get();
-      rows = s.docs.map(d => ({id: d.id, ...d.data()})).filter(r => r.days).map(r => ({id: r.id, name: r.name, v: fmt(r.total), sub: `${r.days} day${r.days === 1 ? '' : 's'}`}));
+      const s = await fdb.collection(PLAYERS).orderBy('total', 'desc').limit(80).get();
+      rows = groupByName(s.docs.map(d => ({id: d.id, ...d.data()})).filter(r => r.days), (t, r) => { t.total = (t.total || 0) + (r.total || 0); t.days = (t.days || 0) + (r.days || 0); })
+        .sort((a, b) => b.total - a.total).map(r => ({id: r.id, ids: r.ids, name: r.name, v: fmt(r.total), sub: `${r.days} day${r.days === 1 ? '' : 's'}`}));
     } else {
       const s = await fdb.collection(PLAYERS).orderBy('streak', 'desc').limit(120).get();
-      rows = s.docs.map(d => ({id: d.id, ...d.data()})).map(r => ({...r, live: liveStreak(r)})).filter(r => r.live > 0)
-        .sort((a, b) => b.live - a.live || (b.best || 0) - (a.best || 0)).map(r => ({id: r.id, name: r.name, v: '🔥 ' + r.live, sub: `best ${r.best || r.live}`}));
+      rows = groupByName(s.docs.map(d => ({id: d.id, ...d.data()})).map(r => ({...r, live: liveStreak(r)})).filter(r => r.live > 0),
+          (t, r) => { t.live = Math.max(t.live, r.live); t.best = Math.max(t.best || 0, r.best || 0); })
+        .sort((a, b) => b.live - a.live || (b.best || 0) - (a.best || 0)).map(r => ({id: r.id, ids: r.ids, name: r.name, v: '🔥 ' + r.live, sub: `best ${r.best || r.live}`}));
     }
     S.boardData[kind] = rows.slice(0, 50);
     if (kind === 'total' || kind === 'streak') rows.forEach(r => { if (r.name) nameCache[r.id] = r.name; });
@@ -1531,7 +1555,7 @@ function renderBoards(){
   if (rows === undefined || rows === 'loading') body = '<p class="mut center">Loading…</p>';
   else if (rows.error) body = `<p class="err">${esc(rows.error)}</p>`;
   else if (!rows.length) body = `<p class="mut center">${k === 'week' ? 'No scores this week yet.' : k === 'today' ? 'Nobody has played today yet. Be the first!' : k === 'streak' ? 'No live streaks yet.' : 'No scores yet.'}</p>`;
-  else body = `<div class="board">${rows.map((r, i) => `<div class="br ${r.id === P.uid ? 'me' : ''}"><span class="rk">${i < 3 ? medals[i] : i + 1}</span><span class="nm">${esc(r.name || 'Player')}${r.id === P.uid ? '<span class="you">you</span>' : ''}</span><span class="dl mut" style="width:auto">${esc(r.sub)}</span><span class="sc" style="width:auto;min-width:64px">${esc(r.v)}</span></div>`).join('')}</div>`;
+  else body = `<div class="board">${rows.map((r, i) => `<div class="br ${isMine(r) ? 'me' : ''}"><span class="rk">${i < 3 ? medals[i] : i + 1}</span><span class="nm">${esc(r.name || 'Player')}${isMine(r) ? '<span class="you">you</span>' : ''}</span><span class="dl mut" style="width:auto">${esc(r.sub)}</span><span class="sc" style="width:auto;min-width:64px">${esc(r.v)}</span></div>`).join('')}</div>`;
   const lw = winners(weekCache[lastWeekStart()]);
   const lastWin = k === 'week' && lw.length ? `<div class="winner small">🏆 Last week (${esc(weekLabel(lastWeekStart()))}): <b>${winnerNames(lw)}</b> · ${fmt(lw[0].total)} pts</div>` : '';
   const note = k === 'week' ? `This week: ${esc(weekLabel(weekStart(ukDay())))} · winner announced Sunday morning` : k === 'today' ? `Scores for ${esc(prettyDay(ukDay()))}` : k === 'total' ? 'All daily quiz points added up' : 'Days in a row playing the daily quiz';
@@ -1566,9 +1590,14 @@ Object.assign(actions, {
     if (!P.uid || P.busy) return;
     P.busy = true; S.err = ''; update();
     try{
-      if (P.profile){ await playerRef().update({name}); P.profile = {...P.profile, name}; }
+      if (!(P.profile && nameKey(P.profile.name) === nameKey(name)) && await nameTaken(name)){
+        S.err = P.profile ? `"${name}" is already taken — please choose a different name.`
+          : `"${name}" is already taken. If that's you on another phone or browser, open the game there, tap your name and choose Save to Google, then come back here and tap Sign in with Google. Otherwise, pick a different name.`;
+        P.busy = false; update(); return;
+      }
+      if (P.profile){ await playerRef().update({name, nameKey: nameKey(name)}); P.profile = {...P.profile, name, nameKey: nameKey(name)}; }
       else {
-        const pr = {name, total: 0, days: 0, correct: 0, streak: 0, best: 0, lastDay: '', created: TS()};
+        const pr = {name, nameKey: nameKey(name), total: 0, days: 0, correct: 0, streak: 0, best: 0, lastDay: '', created: TS()};
         await playerRef().set(pr); P.profile = pr;
       }
       S.name = name; save('td_name', name); S.pname = undefined; nameCache[P.uid] = name;
