@@ -94,6 +94,9 @@ h2{margin:0 0 10px;font-size:22px}
 .winner.small{font-size:15px;padding:10px 12px;margin:12px 0 4px;box-shadow:none;cursor:default}
 .tab{font-size:15px}
 .br .nm small{display:block;font-size:13px;font-weight:400;color:var(--mut);margin-top:1px}
+.claim{background:rgba(255,210,63,.15);border:1px solid rgba(255,210,63,.4);color:#fff;font-size:15px}
+.claim .btns{margin-top:12px}
+.savenudge{display:block;width:100%;margin:12px 0 0;background:rgba(255,159,67,.18);border:1px solid rgba(255,159,67,.5);color:#fff;font-size:14px;font-weight:500;padding:10px 12px;border-radius:12px;text-align:left;line-height:1.35}
 @media (max-width:420px){.qtext{font-size:22px}.opt{font-size:17px;min-height:78px}.logo{font-size:38px}.code{font-size:46px}.settings{grid-template-columns:1fr}}
 </style>
 </head>
@@ -1442,6 +1445,7 @@ function dailyCard(){
     <div class="dhead"><span class="dtitle">📅 Daily Quiz</span><span class="mut">${esc(prettyDay(day))}</span></div>
     <p class="dstat">${status}</p>
     ${btn}
+    ${pr && !P.google ? `<button class="savenudge" data-act="profile">⚠️ Your player is only saved in this browser. <u>Save to Google</u> so you never lose it.</button>` : ''}
     <div class="drow"><button class="link" data-act="profile">${pr ? `👤 ${esc(pr.name)}${streak ? ` · 🔥 ${streak}` : ''} · edit` : '👤 Create your player'}</button>
     ${td ? '' : `<button class="link" data-act="boards">🏆 Leaderboards</button>`}</div>
     ${P.err ? `<div class="err">${esc(P.err)}</div>` : ''}
@@ -1459,7 +1463,9 @@ function renderProfile(){
     <h2>Create your player</h2>
     <p class="mut" style="margin-top:0">Your name appears on the daily, all-time and streak leaderboards. This device will remember you.</p>
     <label>Player name<input id="pnm" maxlength="16" autocomplete="off" placeholder="e.g. Brooky" value="${esc(S.pname ?? S.name ?? '')}"></label>
-    <button class="big primary" data-act="saveName" ${P.busy||!P.uid?'disabled':''}>Create player</button>
+${S.claim ? `<div class="note claim"><b>A player called "${esc(S.claim)}" already exists.</b><br>Is that you on another phone or browser? If so, carry on and your scores will be combined on the leaderboards.
+      <div class="btns"><button class="big primary" data-act="saveName">Yes, that's me</button><button class="big ghost" data-act="notMe">No, I'll choose another name</button></div></div>` : ''}
+    ${S.claim ? '' : `<button class="big primary" data-act="saveName" ${P.busy||!P.uid?'disabled':''}>Create player</button>`}
     <div class="or">or</div>${google}
     ${S.err ? `<div class="err">${esc(S.err)}</div>` : ''}</div>`;
   const streak = liveStreak(pr);
@@ -1473,7 +1479,9 @@ function renderProfile(){
     </div>
     <p class="mut" style="margin:0 0 8px;font-size:14px">Changing your name keeps all your points, streaks and leaderboard places.</p>
     <label>Change name<input id="pnm" maxlength="16" autocomplete="off" value="${esc(S.pname ?? pr.name)}"></label>
-    <button class="big primary" data-act="saveName" ${P.busy?'disabled':''}>Save name</button>
+${S.claim ? `<div class="note claim"><b>A player called "${esc(S.claim)}" already exists.</b><br>Is that you on another phone or browser? If so, carry on and your scores will be combined on the leaderboards.
+      <div class="btns"><button class="big primary" data-act="saveName">Yes, that's me</button><button class="big ghost" data-act="notMe">No, I'll choose another name</button></div></div>` : ''}
+    ${S.claim ? '' : `<button class="big primary" data-act="saveName" ${P.busy?'disabled':''}>Save name</button>`}
     <div style="margin-top:16px">${google}</div>
     ${S.err ? `<div class="err">${esc(S.err)}</div>` : ''}</div>`;
 }
@@ -1495,7 +1503,7 @@ function renderDailyOver(g, pl){
       <div><b>🔥 ${r.streak || '–'}</b><span>day streak</span></div>
       <div><b>${r.rank ? '#' + r.rank : r.saving ? '…' : '–'}</b><span>today's rank</span></div>
     </div>
-    ${r.saving ? '<p class="mut">Saving your score…</p>' : r.error ? `<p class="err">${esc(r.error)}</p>` : '<p class="mut">Saved. Come back tomorrow for a new quiz!</p>'}
+    ${r.saving ? '<p class="mut">Saving your score…</p>' : r.error ? `<p class="err">${esc(r.error)}</p>` : (P.google ? '<p class="mut">Saved. Come back tomorrow for a new quiz!</p>' : '<p class="mut">Saved. Come back tomorrow for a new quiz!</p><button class="savenudge" data-act="profile">⚠️ Save your player to Google so you keep your scores and streak on any phone or browser.</button>')}
     <div class="btns"><button class="big primary" data-act="boards">Leaderboards</button><button class="big ghost" data-act="leave">Home</button></div></div>`;
 }
 
@@ -1578,13 +1586,14 @@ function handleLinkError(e){
 }
 
 Object.assign(actions, {
-  home(){ S.screen = 'home'; S.err = ''; S.pname = undefined; update(); },
-  profile(){ S.screen = 'profile'; S.err = ''; S.pname = undefined; S.after = null; update(); },
+  home(){ S.screen = 'home'; S.err = ''; S.pname = undefined; S.claim = null; update(); },
+  profile(){ S.screen = 'profile'; S.err = ''; S.pname = undefined; S.after = null; S.claim = null; update(); },
   daily(){ S.err = ''; S.after = P.profile ? null : 'daily'; S.screen = P.profile ? 'daily' : 'profile'; update(); },
   boards(){ S.screen = 'boards'; S.err = ''; loadBoard(S.board); },
   tab(el){ S.board = el.dataset.k; loadBoard(S.board); },
   refreshBoard(){ loadBoard(S.board); },
   weekBoard(){ S.screen = 'boards'; S.board = 'week'; S.err = ''; loadBoard('week'); },
+  notMe(){ S.claim = null; S.pname = ''; update(); setTimeout(() => { const b = document.getElementById('pnm'); if (b) b.focus(); }, 50); },
   async saveName(){
     const box = document.getElementById('pnm');
     const name = (box ? box.value : (S.pname ?? (P.profile && P.profile.name) ?? '')).trim();
@@ -1592,11 +1601,11 @@ Object.assign(actions, {
     if (!P.uid || P.busy) return;
     P.busy = true; S.err = ''; update();
     try{
-      if (!(P.profile && nameKey(P.profile.name) === nameKey(name)) && await nameTaken(name)){
-        S.err = P.profile ? `"${name}" is already taken — please choose a different name.`
-          : `"${name}" is already taken. If that's you on another phone or browser, open the game there, tap your name and choose Save to Google, then come back here and tap Sign in with Google. Otherwise, pick a different name.`;
-        P.busy = false; update(); return;
+      const claiming = S.claim && nameKey(S.claim) === nameKey(name);
+      if (!claiming && !(P.profile && nameKey(P.profile.name) === nameKey(name)) && await nameTaken(name)){
+        S.claim = name; S.pname = name; P.busy = false; update(); return;
       }
+      S.claim = null;
       if (P.profile){ await playerRef().update({name, nameKey: nameKey(name)}); P.profile = {...P.profile, name, nameKey: nameKey(name)}; }
       else {
         const pr = {name, nameKey: nameKey(name), total: 0, days: 0, correct: 0, streak: 0, best: 0, lastDay: '', created: TS()};
@@ -1645,7 +1654,7 @@ app.addEventListener('click', e => {
 });
 app.addEventListener('input', e => {
   if (e.target.id === 'nm') S.name = e.target.value;
-  if (e.target.id === 'pnm') S.pname = e.target.value;
+  if (e.target.id === 'pnm'){ S.pname = e.target.value; if (S.claim && nameKey(S.claim) !== nameKey(S.pname)){ S.claim = null; update(); const b = document.getElementById('pnm'); if (b){ b.focus(); b.setSelectionRange(b.value.length, b.value.length); } } }
   if (e.target.id === 'cd'){ e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g,''); S.code = e.target.value; }
 });
 app.addEventListener('keydown', e => {
